@@ -22,7 +22,8 @@ type emu struct {
 
 func debug(degemu *emu) {
 	for _, value := range register {
-		fmt.Println("regi", value, "=", degemu.regi[value])
+		fmt.Print("regi", value, " = ")
+		fmt.Printf("0x%x\n", degemu.regi[value])
 	}
 	fmt.Printf("PC = 0x%x\n", degemu.regPc)
 }
@@ -41,9 +42,9 @@ func initPc(fcEmu *emu) {
 }
 
 func initMem(fcEmu *emu) {
-	fcEmu.memory[0x19] = 33
-	fcEmu.memory[0x200] = 0x19
-	fcEmu.memory[fcEmu.regPc] = 0xb1
+	fcEmu.memory[0x18] = 0x13
+	fcEmu.memory[0x0206] = 0x19
+	fcEmu.memory[fcEmu.regPc] = 0xbe
 	fcEmu.memory[fcEmu.regPc+1] = 0x00
 	fcEmu.memory[fcEmu.regPc+2] = 0x02
 }
