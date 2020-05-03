@@ -7,54 +7,55 @@ import (
 var register = []string{"A", "X", "Y", "S", "P"}
 
 const (
-	mem_cap = 65535
+	memCap = 65535
 	//register = []string{"A", "X", "Y", "S", "P"}
 )
 
 type emu struct {
 	// A X Y S P
 	regi map[string]uint8
-	// PC 
-	reg_pc uint16
+	// PC
+	regPc uint16
 	// memory
-	memory [mem_cap]uint8
+	memory [memCap]uint8
 }
 
-func Debug(degemu *emu){
+func debug(degemu *emu) {
 	for _, value := range register {
-		fmt.Println("regi",value,"=", degemu.regi[value])
+		fmt.Println("regi", value, "=", degemu.regi[value])
 	}
-	fmt.Printf("PC = 0x%x\n",degemu.reg_pc)
+	fmt.Printf("PC = 0x%x\n", degemu.regPc)
 }
 
-func Init_reg(fc_emu *emu){
-	fc_emu.regi = make(map[string]uint8)
-	fc_emu.regi["A"] = 4
-	fc_emu.regi["X"] = 4
-	fc_emu.regi["Y"] = 4
-	fc_emu.regi["S"] = 4
-	fc_emu.regi["P"] = 4
+func initReg(fcEmu *emu) {
+	fcEmu.regi = make(map[string]uint8)
+	fcEmu.regi["A"] = 4
+	fcEmu.regi["X"] = 4
+	fcEmu.regi["Y"] = 4
+	fcEmu.regi["S"] = 4
+	fcEmu.regi["P"] = 4
 }
 
-func Init_pc(fc_emu *emu){
-	fc_emu.reg_pc = 0x8000
+func initPc(fcEmu *emu) {
+	fcEmu.regPc = 0x8000
 }
 
-func Init_mem(fc_emu *emu){
-	fc_emu.memory[fc_emu.reg_pc] = 0xa9
-	fc_emu.memory[fc_emu.reg_pc+1] = 0x01
+func initMem(fcEmu *emu) {
+	fcEmu.memory[0x200] = 20
+	fcEmu.memory[fcEmu.regPc] = 0xad
+	fcEmu.memory[fcEmu.regPc+1] = 0x00
+	fcEmu.memory[fcEmu.regPc+2] = 0x02
 }
 
-func Init_emu(fc_emu *emu){
-	Init_reg(fc_emu)
-	Init_pc(fc_emu)
-	Init_mem(fc_emu)
+func initEmu(fcEmu *emu) {
+	initReg(fcEmu)
+	initPc(fcEmu)
+	initMem(fcEmu)
 }
 
-func main(){
-	var fc_emu = emu{}
-	Init_emu(&fc_emu)
-	//fc_emu.reg_pc = fc_emu.reg_pc + 1
-	fc_emu.Execute()
-	Debug(&fc_emu)
+func main() {
+	var fcEmu = emu{}
+	initEmu(&fcEmu)
+	fcEmu.Execute()
+	debug(&fcEmu)
 }
