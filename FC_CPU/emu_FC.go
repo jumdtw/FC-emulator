@@ -31,7 +31,7 @@ func initReg(fcEmu *emu) {
 	fcEmu.regi = make(map[string]uint8)
 	fcEmu.regi["A"] = 4
 	fcEmu.regi["X"] = 4
-	fcEmu.regi["Y"] = 4
+	fcEmu.regi["Y"] = 6
 	fcEmu.regi["S"] = 4
 	fcEmu.regi["P"] = 4
 }
@@ -41,8 +41,9 @@ func initPc(fcEmu *emu) {
 }
 
 func initMem(fcEmu *emu) {
-	fcEmu.memory[0x200] = 20
-	fcEmu.memory[fcEmu.regPc] = 0xad
+	fcEmu.memory[0x19] = 33
+	fcEmu.memory[0x200] = 0x19
+	fcEmu.memory[fcEmu.regPc] = 0xb1
 	fcEmu.memory[fcEmu.regPc+1] = 0x00
 	fcEmu.memory[fcEmu.regPc+2] = 0x02
 }
