@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 const (
 	// LDAIMM : load a reg imm
 	LDAIMM = 0xa9
@@ -28,6 +30,11 @@ const (
 	LDXABS = 0xae
 	// LDXABSX :
 	LDXABSX = 0xbe
+
+	// PHA :
+	PHA = 0x48
+	// PLA :
+	PLA = 0x68
 )
 
 // LDA
@@ -119,6 +126,18 @@ func (fcEmu emu) ldxAbsY() {
 	fcEmu.regPc = fcEmu.regPc + 2
 }
 
+func (fcEmu emu) pha() {
+	var sppos uint16 = 0x1000 + uint16(fcEmu.regi["S"])
+	fcEmu.memory[sppos] = fcEmu.regi["A"]
+	fcEmu.regi["S"] = fcEmu.regi["S"] - 1
+}
+
+func (fcEmu emu) pla() {
+	fcEmu.regi["S"] = fcEmu.regi["S"] + 1
+	var sppos uint16 = 0x1000 + uint16(fcEmu.regi["S"])
+	fcEmu.regi["A"] = fcEmu.memory[sppos]
+}
+
 func (fcEmu emu) nop() {
 }
 
@@ -155,9 +174,17 @@ func (fcEmu emu) Execute() {
 		fcEmu.ldxAbs()
 	case LDXABSX:
 		fcEmu.ldxAbsY()
+	// pha
+	case PHA:
+		fcEmu.pha()
+	// pla
+	case PLA:
+		fcEmu.pla()
 
 	default:
+		fmt.Printf("not exist function code 0x%x\n", opcd)
 		fcEmu.nop()
+		fcEmu.regPc = 0xffff
 	}
 
 }
