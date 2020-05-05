@@ -33,7 +33,7 @@ func initReg(fcEmu *emu) {
 	fcEmu.regi["X"] = 4
 	fcEmu.regi["Y"] = 6
 	fcEmu.regi["S"] = 0xff
-	fcEmu.regi["P"] = 0b00000010
+	fcEmu.regi["P"] = 0b00000000
 }
 
 func initPc(fcEmu *emu) {
@@ -97,11 +97,11 @@ func readFile(fcEmu *emu) uint8 {
 func initMem(fcEmu *emu) uint8 {
 	progSize := readFile(fcEmu)
 	/*
-		fcEmu.memory[0x18] = 0x13
+		fcEmu.memory[0x99] = 0b1010
 		fcEmu.memory[0x0206] = 0x19
-		fcEmu.memory[fcEmu.regPc] = 0xf0
-		fcEmu.memory[fcEmu.regPc+1] = 0x04
-		fcEmu.memory[fcEmu.regPc+2] = 0x02
+		fcEmu.memory[fcEmu.regPc] = 0x65
+		fcEmu.memory[fcEmu.regPc+1] = 0x03
+		fcEmu.memory[fcEmu.regPc+2] = 0x80
 	*/
 	return progSize
 }
@@ -127,5 +127,5 @@ func main() {
 
 	//fcEmu.Execute()
 	debug(&fcEmu)
-	//fmt.Printf("0x%x\n", fcEmu.memory[0])
+	//fmt.Printf("0x%x\n", fcEmu.memory[0x8099])
 }
