@@ -31,6 +31,12 @@ const (
 	// LDXABSX :
 	LDXABSX = 0xbe
 
+	// STAZERO :
+	STAZERO = 0x85
+
+	// BEQ :
+	BEQ = 0xf0
+
 	// PHA :
 	PHA = 0x48
 	// PLA :
@@ -38,29 +44,29 @@ const (
 )
 
 // LDA
-func (fcEmu emu) ldaImm() {
+func (fcEmu *emu) ldaImm() {
 	fcEmu.regi["A"] = fcEmu.memory[fcEmu.regPc]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
-func (fcEmu emu) ldaZero() {
+func (fcEmu *emu) ldaZero() {
 	var pos uint8 = fcEmu.memory[fcEmu.regPc]
 	fcEmu.regi["A"] = fcEmu.memory[pos]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
-func (fcEmu emu) ldaZeroX() {
+func (fcEmu *emu) ldaZeroX() {
 	var immpos uint8 = fcEmu.memory[fcEmu.regPc]
 	var pos uint16 = uint16(fcEmu.regi["X"] + immpos)
 	fcEmu.regi["A"] = fcEmu.memory[pos]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
-func (fcEmu emu) ldaAbs() {
+func (fcEmu *emu) ldaAbs() {
 	var absposhigh uint16 = uint16(fcEmu.memory[fcEmu.regPc+1])
 	var absposlow uint16 = uint16(fcEmu.memory[fcEmu.regPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
 	fcEmu.regi["A"] = fcEmu.memory[pos]
 	fcEmu.regPc = fcEmu.regPc + 2
 }
-func (fcEmu emu) ldaAbsX() {
+func (fcEmu *emu) ldaAbsX() {
 	var absposhigh uint16 = uint16(fcEmu.memory[fcEmu.regPc+1])
 	var absposlow uint16 = uint16(fcEmu.memory[fcEmu.regPc])
 	var xreg uint16 = uint16(fcEmu.regi["X"])
@@ -68,7 +74,7 @@ func (fcEmu emu) ldaAbsX() {
 	fcEmu.regi["A"] = fcEmu.memory[pos]
 	fcEmu.regPc = fcEmu.regPc + 2
 }
-func (fcEmu emu) ldaAbsY() {
+func (fcEmu *emu) ldaAbsY() {
 	var absposhigh uint16 = uint16(fcEmu.memory[fcEmu.regPc+1])
 	var absposlow uint16 = uint16(fcEmu.memory[fcEmu.regPc])
 	var yreg uint16 = uint16(fcEmu.regi["Y"])
@@ -77,47 +83,47 @@ func (fcEmu emu) ldaAbsY() {
 	fcEmu.regPc = fcEmu.regPc + 2
 }
 
-func (fcEmu emu) ldaIndX() {
+func (fcEmu *emu) ldaIndX() {
 	var absposlow uint8 = uint8(fcEmu.memory[fcEmu.regPc])
 	var xreg uint8 = uint8(fcEmu.regi["X"])
 	var mempos uint16 = uint16(absposlow + xreg)
 	var pos uint8 = fcEmu.memory[mempos]
 	fcEmu.regi["A"] = fcEmu.memory[pos]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
 
-func (fcEmu emu) ldaIndY() {
+func (fcEmu *emu) ldaIndY() {
 	var mempos uint8 = uint8(fcEmu.memory[fcEmu.regPc])
 	var pos uint8 = fcEmu.memory[mempos]
 	var yreg uint8 = uint8(fcEmu.regi["Y"])
 	fcEmu.regi["A"] = fcEmu.memory[pos] + yreg
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
 
 // LDX
-func (fcEmu emu) ldxImm() {
+func (fcEmu *emu) ldxImm() {
 	fcEmu.regi["X"] = fcEmu.memory[fcEmu.regPc]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
-func (fcEmu emu) ldxZero() {
+func (fcEmu *emu) ldxZero() {
 	var pos uint8 = fcEmu.memory[fcEmu.regPc]
 	fcEmu.regi["X"] = fcEmu.memory[pos]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
-func (fcEmu emu) ldxZeroY() {
+func (fcEmu *emu) ldxZeroY() {
 	var immpos uint8 = fcEmu.memory[fcEmu.regPc]
 	var pos uint16 = uint16(fcEmu.regi["Y"] + immpos)
 	fcEmu.regi["X"] = fcEmu.memory[pos]
-	fcEmu.regPc = fcEmu.regPc + 1
+	fcEmu.regPc++
 }
-func (fcEmu emu) ldxAbs() {
+func (fcEmu *emu) ldxAbs() {
 	var absposhigh uint16 = uint16(fcEmu.memory[fcEmu.regPc+1])
 	var absposlow uint16 = uint16(fcEmu.memory[fcEmu.regPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
 	fcEmu.regi["X"] = fcEmu.memory[pos]
 	fcEmu.regPc = fcEmu.regPc + 2
 }
-func (fcEmu emu) ldxAbsY() {
+func (fcEmu *emu) ldxAbsY() {
 	var absposhigh uint16 = uint16(fcEmu.memory[fcEmu.regPc+1])
 	var absposlow uint16 = uint16(fcEmu.memory[fcEmu.regPc])
 	var yreg uint16 = uint16(fcEmu.regi["Y"])
@@ -126,25 +132,51 @@ func (fcEmu emu) ldxAbsY() {
 	fcEmu.regPc = fcEmu.regPc + 2
 }
 
-func (fcEmu emu) pha() {
+// sta
+func (fcEmu *emu) staZero() {
+	fcEmu.memory[fcEmu.memory[fcEmu.regPc]] = fcEmu.regi["A"]
+	fcEmu.regPc++
+}
+
+// beq
+func (fcEmu *emu) beq() {
+	zeroflag := fcEmu.regi["P"] & 0b00000010
+	if zeroflag > 0 {
+		bufPC := int16(fcEmu.regPc)
+		minusflag := fcEmu.memory[fcEmu.regPc] & 0b10000000
+		var imm int16
+		if minusflag > 0 {
+			var minussign uint16 = 0xff00
+			imm = int16(fcEmu.memory[fcEmu.regPc]) + int16(minussign)
+		} else {
+			imm = int16(fcEmu.memory[fcEmu.regPc])
+		}
+		bufPC = bufPC + imm
+		fcEmu.regPc = uint16(bufPC)
+	}
+	fcEmu.regPc++
+}
+
+// pha
+func (fcEmu *emu) pha() {
 	var sppos uint16 = 0x1000 + uint16(fcEmu.regi["S"])
 	fcEmu.memory[sppos] = fcEmu.regi["A"]
 	fcEmu.regi["S"] = fcEmu.regi["S"] - 1
 }
 
-func (fcEmu emu) pla() {
+// pla
+func (fcEmu *emu) pla() {
 	fcEmu.regi["S"] = fcEmu.regi["S"] + 1
 	var sppos uint16 = 0x1000 + uint16(fcEmu.regi["S"])
 	fcEmu.regi["A"] = fcEmu.memory[sppos]
 }
 
-func (fcEmu emu) nop() {
+func (fcEmu *emu) nop() {
 }
 
-func (fcEmu emu) Execute() {
+func (fcEmu *emu) Execute() {
 	var opcd uint8 = fcEmu.memory[fcEmu.regPc]
-	fcEmu.regPc = fcEmu.regPc + 1
-
+	fcEmu.regPc++
 	switch opcd {
 	// lda
 	case LDAIMM:
@@ -174,6 +206,12 @@ func (fcEmu emu) Execute() {
 		fcEmu.ldxAbs()
 	case LDXABSX:
 		fcEmu.ldxAbsY()
+	// sta
+	case STAZERO:
+		fcEmu.staZero()
+	// beq
+	case BEQ:
+		fcEmu.beq()
 	// pha
 	case PHA:
 		fcEmu.pha()
