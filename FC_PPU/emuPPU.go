@@ -427,9 +427,6 @@ func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 			
 		}
 	}
-	
-	
-	
 }
 
 func numblockreturn(i int, k int)(int){
@@ -543,7 +540,15 @@ func main() {
 		ppuemu: newppuemu(),
 	}
 	initppuemu(g.ppuemu)
+	go func(){
+		for true {
+			fmt.Printf("hello")
+		}
+
+	}()
+
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
+
 }
