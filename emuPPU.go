@@ -1,21 +1,9 @@
 package main
 
-import (
-	"fmt"
-	"image"
-	"log"
-	//"time"
-	"github.com/jumdtw/FC-emulator/FileOp"
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-)
-
-//var rc, gc, bc uint8 = 1,0,0
-
 const (
-	pixlsize = 1
-	screenWidth  = 256 * pixlsize
-	screenHeight = 240 * pixlsize
+	Pixlsize = 1
+	ScreenWidth  = 256 * Pixlsize
+	ScreenHeight = 240 * Pixlsize
 	memCap = 65535	
 	
 )
@@ -24,8 +12,8 @@ type rand struct {
 	x, y, z, w uint32
 }
 
-type ppu struct {
-	// memory
+type Ppu struct {
+	// Memory
 	// 0x0000 ~ 0x0fff : bg rom #0　　　 4096
 	// 0x1000 ~ 0x1fff : sprite rom  #1 4096
 	// 0x2000 ~ 0x23bf : name table #0  960 = 32 * 30
@@ -37,24 +25,21 @@ type ppu struct {
 	//			.
 	// 0x3f00 ~ 0x3f0f : BG palette  4 color * 4 palette 
 	// 0x3f10 ~ 0x3f1f : sprite palette 4 color * 4 palette
-	memory [memCap]uint8
+	Memory [memCap]uint8
 }
 
-type Game struct {
-	noiseImage *image.RGBA
-	ppuemu *ppu
-}
+
 
 func romdatareturn(g *Game,romaddr uint64)(uint64,uint64){
 	var highbit, lowbit uint64 = 0, 0
 	for i:=0; i<8; i++{
 		lowbit = lowbit << 8
-		lowbit += uint64(g.ppuemu.memory[romaddr+uint64(i)])
+		lowbit += uint64(g.Ppuemu.Memory[romaddr+uint64(i)])
 	}
 	romaddr += 8
 	for i:=0; i<8; i++{
 		highbit = highbit << 8 
-		highbit += uint64(g.ppuemu.memory[romaddr+uint64(i)])
+		highbit += uint64(g.Ppuemu.Memory[romaddr+uint64(i)])
 	}
 	return highbit, lowbit
 }
@@ -82,7 +67,7 @@ func palletnumreturn(g *Game,numblock int,numtile int)(uint8){
 	var counter int
 	var highflag bool = false 
 	// まずnumblockを利用してメモリからattribute情報を取り出す。
-	var attribute uint8 = g.ppuemu.memory[0x27c0 + int(numblock)]
+	var attribute uint8 = g.Ppuemu.Memory[0x27c0 + int(numblock)]
 	
 	// numtileの判定。ダルい。
 	// 1, まず、16を順に引いていき奇数回なら下側。偶数なら上側(つまり数の少ない方)
@@ -112,7 +97,7 @@ func rgbreturn(g *Game,patternnum uint8,palletnum uint8)(uint8,uint8,uint8){
 	var rc, gc, bc uint8
 	palletaddrhead := 0x3f00 + int(palletnum * 4)
 	
-	colornum := g.ppuemu.memory[palletaddrhead + int(patternnum)]
+	colornum := g.Ppuemu.Memory[palletaddrhead + int(patternnum)]
 	
 	switch colornum{
 	case 0x00:
@@ -380,12 +365,24 @@ func rgbreturn(g *Game,patternnum uint8,palletnum uint8)(uint8,uint8,uint8){
 	return rc, gc, bc
 }
 
-func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){
+func selectnametable(g *Game)int{
+	var Raddr int = 0
+	bgpatternaddr := g.Cpuemu.Memory[0x2000] & 0b00010000
+	if bgpatternaddr == 0b00010000{
+		Raddr = 0x2400
+	}else{
+		Raddr = 0x2000
+	}
+	return Raddr
+}
+
+func DrawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 	var patternNum uint8
 	var palletnum uint8
 	//var palletnum uint8
 	// chrnumにはname tableから、bgまたはspriteの番号を取り出す。
-	chrnum := g.ppuemu.memory[0x2400 + numtile]
+	nametableaddr := selectnametable(g)
+	chrnum := g.Ppuemu.Memory[nametableaddr + numtile]
 	// 番号からほしいタイルのメモリ番号の頭アドレス.ここから128bitとりだす。
 	var romaddr uint64 = uint64(0x1000) + uint64(chrnum)*16
 	var pp int
@@ -395,160 +392,101 @@ func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {
 			// pp : 書き込もうとしているピクセルのrcの場所の配列数宇
-			pp = tileheadaddr+k*4*pixlsize+i*256*pixlsize*4*pixlsize
+			pp = tileheadaddr+k*4*Pixlsize+i*256*Pixlsize*4*Pixlsize
 			// N tile目のpattern number
 			patternNum, highbit, lowbit = patternNumreturn(highbit,lowbit)
 			// patternNumがどのpalletnumであるか。入りえる値は0~3.
 			palletnum = palletnumreturn(g,numblock,numtile)
 			var rc, gc, bc uint8 = rgbreturn(g,patternNum,palletnum)
 
-			g.noiseImage.Pix[pp] = rc
-			g.noiseImage.Pix[pp+1] = gc
-			g.noiseImage.Pix[pp+2] = bc
-			g.noiseImage.Pix[pp+3] = 0xff
+			g.NoiseImage.Pix[pp] = rc
+			g.NoiseImage.Pix[pp+1] = gc
+			g.NoiseImage.Pix[pp+2] = bc
+			g.NoiseImage.Pix[pp+3] = 0xff
 
 			/*
 			// ピクセルの大きさを上がるにはこの処理が必要。下記ソースはピクセルを2x2の大きさで一つのドットにするときに必要になる。
-			g.noiseImage.Pix[pp+4] = rc
-			g.noiseImage.Pix[pp+4+1] = gc
-			g.noiseImage.Pix[pp+4+2] = bc
-			g.noiseImage.Pix[pp+4+3] = 0xff
+			g.NoiseImage.Pix[pp+4] = rc
+			g.NoiseImage.Pix[pp+4+1] = gc
+			g.NoiseImage.Pix[pp+4+2] = bc
+			g.NoiseImage.Pix[pp+4+3] = 0xff
 			
-			g.noiseImage.Pix[pp+256*pixlsize*4] = rc
-			g.noiseImage.Pix[pp+256*pixlsize*4+1] = gc
-			g.noiseImage.Pix[pp+256*pixlsize*4+2] = bc
-			g.noiseImage.Pix[pp+256*pixlsize*4+3] = 0xff
+			g.NoiseImage.Pix[pp+256*Pixlsize*4] = rc
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+1] = gc
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+2] = bc
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+3] = 0xff
 
-			g.noiseImage.Pix[pp+256*pixlsize*4+4] = rc
-			g.noiseImage.Pix[pp+256*pixlsize*4+4+1] = gc
-			g.noiseImage.Pix[pp+256*pixlsize*4+4+2] = bc
-			g.noiseImage.Pix[pp+256*pixlsize*4+4+3] = 0xff
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+4] = rc
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+1] = gc
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+2] = bc
+			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+3] = 0xff
 			*/
 			
 		}
 	}
 }
 
-func numblockreturn(i int, k int)(int){
+func Numblockreturn(i int, k int)(int){
 	var numblock int
 	numblock += i*16
 	numblock += k/2
 	return numblock
 }
 
-func (g *Game) Update(screen *ebiten.Image) error {
-	// Generate the noise with random RGB values.
-	var numblock int
-	var numtile int
-	var vv int
-	for i :=0; i<30; i++ {
-		for k :=0; k < 32; k++ {
-			// vv は n枚目のタイルの一番左上のピクセルの最初の配列番号
-			// k は一増えるごとに8pixl×ピクセル倍率分増える
-			// i は一増えるごとに256×ピクセル倍率に8pixl×ピクセル倍率を掛ける
-			// 最後に4を掛けることにより配列数を出す。
-			vv = (k*8*pixlsize+i*256*pixlsize*8*pixlsize)*4
-			// patternNum がどのブロックにあるか
-			// tileは32x30の半分なのでブロックは16x15.ナンバリングは0スタート
-			numblock = numblockreturn(i,k)
-			numtile = k+i*32
-			drawTile(g,vv,numblock,numtile)
-		}
-	}
-	return nil
-}
-
-func (g *Game) Draw(screen *ebiten.Image) {
-	screen.ReplacePixels(g.noiseImage.Pix)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
-}
-
-func initppuemu(ppuemu *ppu){
-	// カートリッジ0x1を初期化
-	//ReadBinary(path string, readsize int,memory []uint8,baseaddr uint32)([]uint8) {
-	bufmemory := FileOp.ReadBinary("C:/Users/ttnmr/HOME/emulator/FC/kotoha.nes",4096)
+func Initppuemu(Ppuemu *Ppu,chrrombuf []uint8){
 	for i:=0 ;i<0xfff; i++{
-		ppuemu.memory[0x1000+i] = bufmemory[i]
+		Ppuemu.Memory[0x1000+i] = chrrombuf[i]
 	}
+	/*
 	// name table #1 を初期化
 	var baseaddr int = 0x2400
 	var romnum uint8 = 0
 	for i:=0 ;i<256;i++{
-		ppuemu.memory[baseaddr] = 0
+		Ppuemu.Memory[baseaddr] = 0
 		baseaddr++
 	}
 
 	for i:=0 ;i<16;i++{
 		for k:=0;k<8;k++{
-			ppuemu.memory[baseaddr] = 0
+			Ppuemu.Memory[baseaddr] = 0
 			baseaddr++
 		}
 		for k:=0;k<16;k++{
-			ppuemu.memory[baseaddr] = romnum
+			Ppuemu.Memory[baseaddr] = romnum
 			baseaddr++
 			romnum++
 			
 		}
 		for k:=0;k<8;k++{
-			ppuemu.memory[baseaddr] = 0
+			Ppuemu.Memory[baseaddr] = 0
 			baseaddr++
 		}
 	}
 
 	for i:=0 ;i<192;i++{
-		ppuemu.memory[baseaddr] = 0
+		Ppuemu.Memory[baseaddr] = 0
 		baseaddr++
 	}
 	// attribute #1 を初期化
 	for i:=0 ;i<64;i++{
-		ppuemu.memory[0x27c0+i] = 0
+		Ppuemu.Memory[0x27c0+i] = 0
 	}
 	// BG pallet を初期化
-	ppuemu.memory[0x3f00] = 0x20
-	ppuemu.memory[0x3f01] = 0x23
-	ppuemu.memory[0x3f02] = 0x32
-	ppuemu.memory[0x3f03] = 0x0f
-	ppuemu.memory[0x3f04] = 0x01
-	ppuemu.memory[0x3f05] = 0x16
-	ppuemu.memory[0x3f06] = 0x26
-	ppuemu.memory[0x3f07] = 0x2a
-	ppuemu.memory[0x3f08] = 0x01
-	ppuemu.memory[0x3f09] = 0x16
-	ppuemu.memory[0x3f0a] = 0x26
-	ppuemu.memory[0x3f0b] = 0x2a
-	ppuemu.memory[0x3f0c] = 0x01
-	ppuemu.memory[0x3f0d] = 0x16
-	ppuemu.memory[0x3f0e] = 0x26
-	ppuemu.memory[0x3f0f] = 0x2a
-}
-
-func newppuemu()(*ppu){
-	ppuemu := ppu{}
-	return &ppuemu
-}
-
-func main() {
-
-	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
-	ebiten.SetWindowTitle("FC-emulator")
-	g := &Game{
-		noiseImage: image.NewRGBA(image.Rect(0, 0, screenWidth, screenHeight)),
-		ppuemu: newppuemu(),
-	}
-	initppuemu(g.ppuemu)
-	go func(){
-		for true {
-			fmt.Printf("hello")
-		}
-
-	}()
-
-	if err := ebiten.RunGame(g); err != nil {
-		log.Fatal(err)
-	}
-
+	Ppuemu.Memory[0x3f00] = 0x20
+	Ppuemu.Memory[0x3f01] = 0x23
+	Ppuemu.Memory[0x3f02] = 0x32
+	Ppuemu.Memory[0x3f03] = 0x0f
+	Ppuemu.Memory[0x3f04] = 0x01
+	Ppuemu.Memory[0x3f05] = 0x16
+	Ppuemu.Memory[0x3f06] = 0x26
+	Ppuemu.Memory[0x3f07] = 0x2a
+	Ppuemu.Memory[0x3f08] = 0x01
+	Ppuemu.Memory[0x3f09] = 0x16
+	Ppuemu.Memory[0x3f0a] = 0x26
+	Ppuemu.Memory[0x3f0b] = 0x2a
+	Ppuemu.Memory[0x3f0c] = 0x01
+	Ppuemu.Memory[0x3f0d] = 0x16
+	Ppuemu.Memory[0x3f0e] = 0x26
+	Ppuemu.Memory[0x3f0f] = 0x2a
+	*/
 }

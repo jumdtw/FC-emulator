@@ -1,4 +1,4 @@
-package main
+package FC_CPU
 
 import (
 	"fmt"
@@ -9,42 +9,56 @@ const (
 	memCap = 65535
 )
 
-type emu struct {
+type CpuEmu struct {
+
+	//各割り込みを行うための情報
+	Irqaddr uint16
+	Nmiaddr uint16
+	Resetaddr uint16
+	InterruptFlag bool
+
+	// vram　へ書き込みを行うための内部情報 
+	// vram addr
+	VramAddr uint16
+	// vram write flag
+	VramWriteFlag bool
+	// vram write value
+	VramWriteValue uint8
+
+
 	// A X Y S P
-	regi map[string]uint8
+	Regi map[string]uint8
 	// PC
-	regPc uint16
-	// memory
-	memory [memCap]uint8
+	RegPc uint16
+	// Memory
+	Memory [memCap]uint8
 }
 
-func debug(degemu *emu) {
-	var register = []string{"A", "X", "Y", "S"}
-	for _, value := range register {
-		fmt.Print("regi", value, " = ")
-		fmt.Printf("0x%x\n", degemu.regi[value])
+func debug(degemu *CpuEmu) {
+	var Register = []string{"A", "X", "Y", "S"}
+	for _, value := range Register {
+		fmt.Print("Regi", value, " = ")
+		fmt.Printf("0x%x\n", degemu.Regi[value])
 	}
-	fmt.Printf("regiP = 0b%08b\n",degemu.regi["P"])
-	fmt.Printf("PC = 0x%x\n", degemu.regPc)
-	fmt.Printf("opcd  = 0x%x\n",degemu.memory[degemu.regPc])
-	fmt.Printf("memory [0] = %d\n",degemu.memory[0])
-	fmt.Printf("memory [0x208] = %d\n",degemu.memory[0x208])
-
-
-
+	fmt.Printf("RegiP = 0b%08b\n",degemu.Regi["P"])
+	fmt.Printf("PC = 0x%x\n", degemu.RegPc)
+	fmt.Printf("opcd  = 0x%x\n",degemu.Memory[degemu.RegPc])
+	fmt.Printf("Memory [0] = %d\n",degemu.Memory[0])
+	fmt.Printf("Memory [0x208] = %d\n",degemu.Memory[0x208])
 }
 
-func initReg(fcEmu *emu) {
-	fcEmu.regi = make(map[string]uint8)
-	fcEmu.regi["A"] = 4
-	fcEmu.regi["X"] = 4
-	fcEmu.regi["Y"] = 6
-	fcEmu.regi["S"] = 0xff
-	fcEmu.regi["P"] = 0b00000000
+func initReg(fcEmu *CpuEmu) {
+	fcEmu.Regi = make(map[string]uint8)
+	fcEmu.Regi["A"] = 4
+	fcEmu.Regi["X"] = 4
+	fcEmu.Regi["Y"] = 6
+	fcEmu.Regi["S"] = 0xff
+	fcEmu.Regi["P"] = 0b00000000
+	fcEmu.InterruptFlag = false
 }
 
-func initPc(fcEmu *emu,resetaddr uint16) {
-	fcEmu.regPc = resetaddr
+func initPc(fcEmu *CpuEmu,resetaddr uint16) {
+	fcEmu.RegPc = resetaddr
 }
 
 func checkNes(checkbuf []uint8) (uint8, uint8) {
@@ -65,9 +79,9 @@ func checkNes(checkbuf []uint8) (uint8, uint8) {
 	return progSize, chrSize
 }
 
-func readFile(fcEmu *emu) (uint8, []uint8) {
+func readFile(fcEmu *CpuEmu) ([]uint8) {
 	var irqaddr, nmiaddr, resetaddr uint16 = 0, 0, 0
-	bufregpc := 0x8000
+	bufRegpc := 0x8000
 	file, err := os.Open(`C:\Users\ttnmr\HOME\emulator\FC\amegure.nes`)
 
 	if err != nil {
@@ -125,10 +139,14 @@ func readFile(fcEmu *emu) (uint8, []uint8) {
 		}
 		progcounter--
 		// nes file の pro 部分を 0x8000 から 16384*progSize 分読み込む
-		fcEmu.memory[bufregpc] = writebuf[0]
-		//fmt.Printf("rom: 0x%x\n",fcEmu.memory[bufregpc])
-		bufregpc++
+		fcEmu.Memory[bufRegpc] = writebuf[0]
+		//fmt.Printf("rom: 0x%x\n",fcEmu.Memory[bufRegpc])
+		bufRegpc++
 	}
+
+	fcEmu.Irqaddr = irqaddr
+	fcEmu.Nmiaddr = nmiaddr
+	fcEmu.Resetaddr = resetaddr
 	
 	bufcounter := 0
 	for chrcounter >= 0 {
@@ -147,90 +165,19 @@ func readFile(fcEmu *emu) (uint8, []uint8) {
 	}
 
 	initPc(fcEmu, resetaddr)
-	return progSize, chrrombuf
+	return chrrombuf
 }
 
-func initMem(fcEmu *emu) (uint8, []uint8) {
-	progSize, chrrombuf := readFile(fcEmu)
-	
-	/*
-	fcEmu.memory[0] = 5
-	
-	fcEmu.memory[fcEmu.regPc] = 0xa9
-	fcEmu.memory[fcEmu.regPc+1] = 0x56
-
-	fcEmu.memory[fcEmu.regPc+2] = 0x48
-
-	fcEmu.memory[fcEmu.regPc+3] = 0xa9
-	fcEmu.memory[fcEmu.regPc+4] = 0x07
-
-	fcEmu.memory[fcEmu.regPc+5] = 0x48
-
-	fcEmu.memory[fcEmu.regPc+6] = 0x18
-
-	fcEmu.memory[fcEmu.regPc+7] = 0xa9
-	fcEmu.memory[fcEmu.regPc+8] = 0x00
-
-	fcEmu.memory[fcEmu.regPc+9] = 0x68
-
-	fcEmu.memory[fcEmu.regPc+10] = 0x85
-	fcEmu.memory[fcEmu.regPc+11] = 0x00
-
-	fcEmu.memory[fcEmu.regPc+12] = 0x68
-
-	fcEmu.memory[fcEmu.regPc+13] = 0x65
-	fcEmu.memory[fcEmu.regPc+14] = 0x00
-	
-
-	return uint8(1), make([]uint8,0)
-	*/
-	
-	return progSize, chrrombuf
+func initMem(fcEmu *CpuEmu) ([]uint8) {
+	chrrombuf := readFile(fcEmu)	
+	return chrrombuf
 }
 
-func initEmu(fcEmu *emu) (uint8, []uint8) {
+func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	initReg(fcEmu)
-	fcEmu.regPc = 0x8000
-	progSize, chrrombuf := initMem(fcEmu)
-	return progSize, chrrombuf
+	fcEmu.RegPc = 0x8000
+	chrrombuf := initMem(fcEmu)
+	return chrrombuf
 }
 
-func main() {
-	var fcEmu = emu{}
-	var continueflag bool = false 
-	var index string
-	breakpoint := make([]uint16, 0,50)
-	//breakpoint = append(breakpoint,0x834f)
-	progSize, _ := initEmu(&fcEmu)
-	fmt.Printf("progsize: %d\n",progSize)
-	
-	for fcEmu.regPc < 0xffff {
-		for _, value := range breakpoint{
-			if value == fcEmu.regPc{
-				continueflag = true
-			}
-		}
-		if continueflag == true{
-			debug(&fcEmu)
-			fmt.Print(" >>")
-			fmt.Scan(&index)
-			if index == "c"{
-				continueflag = true
-			}else{
-				continueflag = false
-			}
-		}
 
-		fcEmu.Execute()
-		fmt.Printf("main : 0x%x\n", fcEmu.regPc)
-	}
-	
-	/*
-	for i:=0 ; i<10 ;i++{
-		fcEmu.Execute()
-		debug(&fcEmu)
-		fmt.Print("\n")
-	}
-	*/
-	//fmt.Printf("0x%x\n", fcEmu.memory[0x8099])
-}
