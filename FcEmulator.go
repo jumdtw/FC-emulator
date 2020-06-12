@@ -48,17 +48,18 @@ func cpuexecute(g *Game){
 		g.Cpuemu.RegPc = g.Cpuemu.Nmiaddr
 	}
 
-	fmt.Printf("execute code : 0x%x\n",g.Cpuemu.Memory[g.Cpuemu.RegPc])
 	g.Cpuemu.Execute()
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
-		//fmt.Printf("vramaddr : 0x%x\n",g.Cpuemu.VramAddr)
 		g.Cpuemu.VramAddr++
 		g.Cpuemu.VramWriteFlag = false
 	}
 
 }
+
+
+
 
 func (g *Game) Update(screen *ebiten.Image) error {
 	// Generate the noise with random RGB values.
@@ -77,12 +78,11 @@ func (g *Game) Update(screen *ebiten.Image) error {
 			numblock = Numblockreturn(i,k)
 			numtile = k+i*32
 			DrawTile(g,vv,numblock,numtile)
-
 			// ppu はcpuの3倍のクロックを持っているのでppuの方が動作的には早いが
 			// さすがにここで実行すると遅すぎるので将来的には修正が必要
 			cpuexecute(g)
-
 		}
+
 	}
 
 	return nil

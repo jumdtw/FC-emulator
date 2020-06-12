@@ -1,5 +1,6 @@
 package main
 
+
 const (
 	Pixlsize = 1
 	ScreenWidth  = 256 * Pixlsize
@@ -63,33 +64,51 @@ func patternNumreturn(highbit uint64,lowbit uint64)(uint8,uint64,uint64){
 	return uint8(patternNum),highbit,lowbit
 }
 
+// blockが色塗りの最小単位。tile to block と同様に折り返しがあるので注意
+func rattributeoffset(numblock int)(int){
+	var offset int
+	//var highflag bool = false
+	// 32で割ることで何行目かがわかる
+	line := numblock/32
+	// 何列目かを図っている
+	var row int = (numblock%16)/2
+
+	offset = line*8 + row
+
+	return offset
+}
+
 func palletnumreturn(g *Game,numblock int,numtile int)(uint8){
 	var counter int
 	var highflag bool = false 
+
 	// まずnumblockを利用してメモリからattribute情報を取り出す。
-	var attribute uint8 = g.Ppuemu.Memory[0x27c0 + int(numblock)]
-	
+	Raddr := 0x23c0
+	offset := rattributeoffset(numblock)
+	var attribute uint8 = g.Ppuemu.Memory[Raddr + offset]
+
 	// numtileの判定。ダルい。
 	// 1, まず、16を順に引いていき奇数回なら下側。偶数なら上側(つまり数の少ない方)
 	counter = 0
-	bufnumtile := numtile
-	for bufnumtile > 0{
-		bufnumtile -= 16
-		counter++
-	}
+	bufnumblock := numblock
+	counter = bufnumblock / 16
+
 	if counter%2==1{
 		highflag = true
 	}
 	if highflag {
 		attribute = attribute >> 4
+		attribute = attribute & 0b00001111
+	}else{
+		attribute = attribute & 0b00001111
 	}
 	// 2, 次にその数自体が偶数なら小さい方。奇数なら大きいほう
-	if numtile%2 == 0 {
-		attribute = 0x03 & attribute
+	if numblock%2 == 0 {
+		attribute = 0b00000011 & attribute
 	}else{
 		attribute = attribute >> 2
 	}
-	
+
 	return attribute
 }
 
@@ -98,6 +117,13 @@ func rgbreturn(g *Game,patternnum uint8,palletnum uint8)(uint8,uint8,uint8){
 	palletaddrhead := 0x3f00 + int(palletnum * 4)
 	
 	colornum := g.Ppuemu.Memory[palletaddrhead + int(patternnum)]
+
+	
+	// ゼロは背景色
+	if patternnum == 0 {
+		colornum = g.Ppuemu.Memory[0x3f10]
+	}
+	
 	
 	switch colornum{
 	case 0x00:
@@ -365,13 +391,19 @@ func rgbreturn(g *Game,patternnum uint8,palletnum uint8)(uint8,uint8,uint8){
 	return rc, gc, bc
 }
 
-func selectnametable(g *Game)int{
-	var Raddr int = 0
+func Numblockreturn(i int, k int)(int){
+	var numblock int
+	i = i/2
+	numblock = i*16
+	numblock += k/2
+	return numblock
+}
+
+func selectbgcartridge(g *Game) uint64 {
+	var Raddr uint64 = 0
 	bgpatternaddr := g.Cpuemu.Memory[0x2000] & 0b00010000
 	if bgpatternaddr == 0b00010000{
-		Raddr = 0x2400
-	}else{
-		Raddr = 0x2000
+		Raddr = 0x1000
 	}
 	return Raddr
 }
@@ -381,28 +413,31 @@ func DrawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 	var palletnum uint8
 	//var palletnum uint8
 	// chrnumにはname tableから、bgまたはspriteの番号を取り出す。
-	nametableaddr := selectnametable(g)
+	nametableaddr := 0x2000
 	chrnum := g.Ppuemu.Memory[nametableaddr + numtile]
 	// 番号からほしいタイルのメモリ番号の頭アドレス.ここから128bitとりだす。
-	var romaddr uint64 = uint64(0x1000) + uint64(chrnum)*16
+	Raddr := selectbgcartridge(g)
+	var romaddr uint64 = Raddr + uint64(chrnum)*16
 	var pp int
 
 	highbit, lowbit := romdatareturn(g,romaddr)
 
+	// patternNumがどのpalletnumであるか。入りえる値は0~3.
+	palletnum = palletnumreturn(g,numblock,numtile)
+	
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {
 			// pp : 書き込もうとしているピクセルのrcの場所の配列数宇
 			pp = tileheadaddr+k*4*Pixlsize+i*256*Pixlsize*4*Pixlsize
 			// N tile目のpattern number
 			patternNum, highbit, lowbit = patternNumreturn(highbit,lowbit)
-			// patternNumがどのpalletnumであるか。入りえる値は0~3.
-			palletnum = palletnumreturn(g,numblock,numtile)
 			var rc, gc, bc uint8 = rgbreturn(g,patternNum,palletnum)
 
 			g.NoiseImage.Pix[pp] = rc
 			g.NoiseImage.Pix[pp+1] = gc
 			g.NoiseImage.Pix[pp+2] = bc
 			g.NoiseImage.Pix[pp+3] = 0xff
+			
 
 			/*
 			// ピクセルの大きさを上がるにはこの処理が必要。下記ソースはピクセルを2x2の大きさで一つのドットにするときに必要になる。
@@ -426,67 +461,8 @@ func DrawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 	}
 }
 
-func Numblockreturn(i int, k int)(int){
-	var numblock int
-	numblock += i*16
-	numblock += k/2
-	return numblock
-}
-
 func Initppuemu(Ppuemu *Ppu,chrrombuf []uint8){
 	for i:=0 ;i<0xfff; i++{
-		Ppuemu.Memory[0x1000+i] = chrrombuf[i]
+		Ppuemu.Memory[0x0000+i] = chrrombuf[i]
 	}
-	/*
-	// name table #1 を初期化
-	var baseaddr int = 0x2400
-	var romnum uint8 = 0
-	for i:=0 ;i<256;i++{
-		Ppuemu.Memory[baseaddr] = 0
-		baseaddr++
-	}
-
-	for i:=0 ;i<16;i++{
-		for k:=0;k<8;k++{
-			Ppuemu.Memory[baseaddr] = 0
-			baseaddr++
-		}
-		for k:=0;k<16;k++{
-			Ppuemu.Memory[baseaddr] = romnum
-			baseaddr++
-			romnum++
-			
-		}
-		for k:=0;k<8;k++{
-			Ppuemu.Memory[baseaddr] = 0
-			baseaddr++
-		}
-	}
-
-	for i:=0 ;i<192;i++{
-		Ppuemu.Memory[baseaddr] = 0
-		baseaddr++
-	}
-	// attribute #1 を初期化
-	for i:=0 ;i<64;i++{
-		Ppuemu.Memory[0x27c0+i] = 0
-	}
-	// BG pallet を初期化
-	Ppuemu.Memory[0x3f00] = 0x20
-	Ppuemu.Memory[0x3f01] = 0x23
-	Ppuemu.Memory[0x3f02] = 0x32
-	Ppuemu.Memory[0x3f03] = 0x0f
-	Ppuemu.Memory[0x3f04] = 0x01
-	Ppuemu.Memory[0x3f05] = 0x16
-	Ppuemu.Memory[0x3f06] = 0x26
-	Ppuemu.Memory[0x3f07] = 0x2a
-	Ppuemu.Memory[0x3f08] = 0x01
-	Ppuemu.Memory[0x3f09] = 0x16
-	Ppuemu.Memory[0x3f0a] = 0x26
-	Ppuemu.Memory[0x3f0b] = 0x2a
-	Ppuemu.Memory[0x3f0c] = 0x01
-	Ppuemu.Memory[0x3f0d] = 0x16
-	Ppuemu.Memory[0x3f0e] = 0x26
-	Ppuemu.Memory[0x3f0f] = 0x2a
-	*/
 }

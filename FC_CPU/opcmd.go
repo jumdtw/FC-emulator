@@ -217,13 +217,10 @@ func (fcEmu *CpuEmu) staAbs() {
 	var pos uint16 = (absposhigh << 8) + absposlow
 	// 0x2006だったらppuへのアクセス
 	if pos == 0x2006 {
-		
 		fcEmu.VramAddr = fcEmu.VramAddr << 8
 		fcEmu.VramAddr += uint16(fcEmu.Regi["A"])
-		fmt.Printf("change vram addr :0x%x\n",fcEmu.VramAddr)
 	}
 	if pos == 0x2007 {
-		fmt.Printf("write vram :0x%x \n",fcEmu.VramAddr)
 		fcEmu.VramWriteFlag = true
 		fcEmu.VramWriteValue = fcEmu.Regi["A"]
 	}else {
