@@ -1,5 +1,6 @@
 package main
 
+//import "fmt"
 
 const (
 	Pixlsize = 1
@@ -11,6 +12,13 @@ const (
 
 type rand struct {
 	x, y, z, w uint32
+}
+
+type Sprite struct {
+	X int 
+	Y int 
+	Spritenum int 
+	Sflag uint8
 }
 
 type Ppu struct {
@@ -27,11 +35,12 @@ type Ppu struct {
 	// 0x3f00 ~ 0x3f0f : BG palette  4 color * 4 palette 
 	// 0x3f10 ~ 0x3f1f : sprite palette 4 color * 4 palette
 	Memory [memCap]uint8
+	Oam [256]Sprite 
 }
 
 
 
-func romdatareturn(g *Game,romaddr uint64)(uint64,uint64){
+func Romdatareturn(g *Game,romaddr uint64)(uint64,uint64){
 	var highbit, lowbit uint64 = 0, 0
 	for i:=0; i<8; i++{
 		lowbit = lowbit << 8
@@ -45,7 +54,7 @@ func romdatareturn(g *Game,romaddr uint64)(uint64,uint64){
 	return highbit, lowbit
 }
 
-func patternNumreturn(highbit uint64,lowbit uint64)(uint8,uint64,uint64){
+func PatternNumreturn(highbit uint64,lowbit uint64)(uint8,uint64,uint64){
 	var patternNum uint8 = 0x00
 	//一番最初のビットのみ必要なので取り出す。
 	bufhighbit := highbit & 0x8000000000000000
@@ -78,7 +87,7 @@ func rattributeoffset(numblock int)(int){
 	return offset
 }
 
-func palletnumreturn(g *Game,numblock int,numtile int)(uint8){
+func Palletnumreturn(g *Game,numblock int,numtile int)(uint8){
 	var counter int
 	var highflag bool = false 
 
@@ -112,9 +121,9 @@ func palletnumreturn(g *Game,numblock int,numtile int)(uint8){
 	return attribute
 }
 
-func rgbreturn(g *Game,patternnum uint8,palletnum uint8)(uint8,uint8,uint8){
+func Rgbreturn(g *Game,patternnum uint8,palletnum uint8,bgaddr int)(uint8,uint8,uint8){
 	var rc, gc, bc uint8
-	palletaddrhead := 0x3f00 + int(palletnum * 4)
+	palletaddrhead := bgaddr + int(palletnum * 4)
 	
 	colornum := g.Ppuemu.Memory[palletaddrhead + int(patternnum)]
 
@@ -399,7 +408,7 @@ func Numblockreturn(i int, k int)(int){
 	return numblock
 }
 
-func selectbgcartridge(g *Game) uint64 {
+func Selectbgcartridge(g *Game) uint64 {
 	var Raddr uint64 = 0
 	bgpatternaddr := g.Cpuemu.Memory[0x2000] & 0b00010000
 	if bgpatternaddr == 0b00010000{
@@ -408,55 +417,28 @@ func selectbgcartridge(g *Game) uint64 {
 	return Raddr
 }
 
-func DrawTile(g *Game,tileheadaddr int,numblock int,numtile int){
+func DrawSprite(g *Game, pp int){
+
+	
 	var patternNum uint8
 	var palletnum uint8
-	//var palletnum uint8
-	// chrnumにはname tableから、bgまたはspriteの番号を取り出す。
-	nametableaddr := 0x2000
-	chrnum := g.Ppuemu.Memory[nametableaddr + numtile]
-	// 番号からほしいタイルのメモリ番号の頭アドレス.ここから128bitとりだす。
-	Raddr := selectbgcartridge(g)
-	var romaddr uint64 = Raddr + uint64(chrnum)*16
-	var pp int
-
-	highbit, lowbit := romdatareturn(g,romaddr)
-
-	// patternNumがどのpalletnumであるか。入りえる値は0~3.
-	palletnum = palletnumreturn(g,numblock,numtile)
-	
+	oam := g.Ppuemu.Oam[pp]
+	palletnum = oam.Sflag & 0b00000011
+	spritex := oam.X
+	spritey := oam.Y + 3
+	highbit, lowbit := Romdatareturn(g,uint64(0x1000)+uint64(oam.Spritenum*16))
+	arrayhead := (spritex*Pixlsize + spritey*256*Pixlsize)*4
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {
-			// pp : 書き込もうとしているピクセルのrcの場所の配列数宇
-			pp = tileheadaddr+k*4*Pixlsize+i*256*Pixlsize*4*Pixlsize
-			// N tile目のpattern number
-			patternNum, highbit, lowbit = patternNumreturn(highbit,lowbit)
-			var rc, gc, bc uint8 = rgbreturn(g,patternNum,palletnum)
-
-			g.NoiseImage.Pix[pp] = rc
-			g.NoiseImage.Pix[pp+1] = gc
-			g.NoiseImage.Pix[pp+2] = bc
-			g.NoiseImage.Pix[pp+3] = 0xff
-			
-
-			/*
-			// ピクセルの大きさを上がるにはこの処理が必要。下記ソースはピクセルを2x2の大きさで一つのドットにするときに必要になる。
-			g.NoiseImage.Pix[pp+4] = rc
-			g.NoiseImage.Pix[pp+4+1] = gc
-			g.NoiseImage.Pix[pp+4+2] = bc
-			g.NoiseImage.Pix[pp+4+3] = 0xff
-			
-			g.NoiseImage.Pix[pp+256*Pixlsize*4] = rc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+1] = gc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+2] = bc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+3] = 0xff
-
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4] = rc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+1] = gc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+2] = bc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+3] = 0xff
-			*/
-			
+			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+			pp := arrayhead + (k+i*256)*4
+			if pp < 256*240*4 {
+				g.NoiseImage.Pix[pp] = rc
+				g.NoiseImage.Pix[pp+1] = gc
+				g.NoiseImage.Pix[pp+2] = bc
+				g.NoiseImage.Pix[pp+3] = 0xff
+			}
 		}
 	}
 }
@@ -464,5 +446,8 @@ func DrawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 func Initppuemu(Ppuemu *Ppu,chrrombuf []uint8){
 	for i:=0 ;i<0xfff; i++{
 		Ppuemu.Memory[0x0000+i] = chrrombuf[i]
+	}
+	for i:=0 ;i<0xfff; i++{
+		Ppuemu.Memory[0x1000+i] = chrrombuf[0x1000+i]
 	}
 }

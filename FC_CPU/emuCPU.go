@@ -6,10 +6,15 @@ import (
 )
 
 const (
-	memCap = 65535
+	memCap = 65536
 )
 
 type CpuEmu struct {
+
+	// mirror
+	// 0 == horizontal
+	// 1 == vertical
+	Mirror int
 
 	//各割り込みを行うための情報
 	Irqaddr uint16
@@ -25,6 +30,26 @@ type CpuEmu struct {
 	// vram write value
 	VramWriteValue uint8
 
+	// oamへの書き込みフラッグ
+	Oamnum int
+	OamWriteFlag bool
+	OamWritecount int
+	OamWriteValue int
+
+	// pad 
+	BotmReadcount int
+	Abotmflag bool
+	Bbotmflag bool
+	Selectbotmflag bool
+	Startbotmflag bool
+	Downbotmflag bool
+	Leftbotmflag bool
+	Rightbotmflag bool
+	Upbotmflag bool
+
+	// draw info
+	DisplayX int
+	DisplayY int
 
 	// A X Y S P
 	Regi map[string]uint8
@@ -34,24 +59,25 @@ type CpuEmu struct {
 	Memory [memCap]uint8
 }
 
-func debug(degemu *CpuEmu) {
+func (degemu *CpuEmu)Debug() {
 	var Register = []string{"A", "X", "Y", "S"}
 	for _, value := range Register {
 		fmt.Print("Regi", value, " = ")
 		fmt.Printf("0x%x\n", degemu.Regi[value])
 	}
+	fmt.Printf("N. V. R. B. D. I. Z. C\n")
 	fmt.Printf("RegiP = 0b%08b\n",degemu.Regi["P"])
 	fmt.Printf("PC = 0x%x\n", degemu.RegPc)
 	fmt.Printf("opcd  = 0x%x\n",degemu.Memory[degemu.RegPc])
 	fmt.Printf("Memory [0] = %d\n",degemu.Memory[0])
-	fmt.Printf("Memory [0x208] = %d\n",degemu.Memory[0x208])
+	fmt.Printf("Memory [0x208] = %d\n\n\n",degemu.Memory[0x208])
 }
 
 func initReg(fcEmu *CpuEmu) {
 	fcEmu.Regi = make(map[string]uint8)
-	fcEmu.Regi["A"] = 4
-	fcEmu.Regi["X"] = 4
-	fcEmu.Regi["Y"] = 6
+	fcEmu.Regi["A"] = 0
+	fcEmu.Regi["X"] = 0
+	fcEmu.Regi["Y"] = 0
 	fcEmu.Regi["S"] = 0xff
 	fcEmu.Regi["P"] = 0b00000000
 	fcEmu.InterruptFlag = false
@@ -61,7 +87,7 @@ func initPc(fcEmu *CpuEmu,resetaddr uint16) {
 	fcEmu.RegPc = resetaddr
 }
 
-func checkNes(checkbuf []uint8) (uint8, uint8) {
+func checkNes(checkbuf []uint8) (uint8, uint8, int) {
 	if checkbuf[0] != 0x4e {
 		panic("not nes file : not 0x4e")
 	}
@@ -76,13 +102,22 @@ func checkNes(checkbuf []uint8) (uint8, uint8) {
 	}
 	progSize := checkbuf[4]
 	chrSize := checkbuf[5]
-	return progSize, chrSize
+	mirrorflag := checkbuf[6] & 0b00000001
+	mirror := 0
+	if mirrorflag == 0b00000001 {
+		mirror = 1
+	}
+	return progSize, chrSize, mirror
 }
 
 func readFile(fcEmu *CpuEmu) ([]uint8) {
 	var irqaddr, nmiaddr, resetaddr uint16 = 0, 0, 0
+	var progSize, chrSize uint8 = 0, 0
 	bufRegpc := 0x8000
-	file, err := os.Open(`C:\Users\ttnmr\HOME\emulator\FC\amegure.nes`)
+	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\chickenrace2.nes`)
+	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
+	//file, err := os.Open(`C:\Users\ttnmr\HOME\6502assembler\test_nes\pulsewave_april_2009.nes`)
+	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\amegure.nes`)
 
 	if err != nil {
 		panic("file error")
@@ -98,7 +133,7 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 	}
 	defer file.Close()
 	// progSize 1 == 16384
-	progSize, chrSize := checkNes(checkbuf)
+	progSize, chrSize, fcEmu.Mirror = checkNes(checkbuf)
 	// この数で配列を操作するので一引かないとずれちゃう
 	progcounter := int(progSize) * 16384
 	progcounter--
@@ -137,11 +172,11 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 			buf = buf << 8
 			nmiaddr += buf
 		}
-		progcounter--
 		// nes file の pro 部分を 0x8000 から 16384*progSize 分読み込む
 		fcEmu.Memory[bufRegpc] = writebuf[0]
 		//fmt.Printf("rom: 0x%x\n",fcEmu.Memory[bufRegpc])
 		bufRegpc++
+		progcounter--
 	}
 
 	fcEmu.Irqaddr = irqaddr
@@ -175,7 +210,9 @@ func initMem(fcEmu *CpuEmu) ([]uint8) {
 
 func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	initReg(fcEmu)
-	fcEmu.RegPc = 0x8000
+	fcEmu.BotmReadcount = 0
+	fcEmu.DisplayX = 0
+	fcEmu.DisplayY = 0
 	chrrombuf := initMem(fcEmu)
 	return chrrombuf
 }

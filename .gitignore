@@ -1,6 +1,5 @@
 test.go
-amegure.nes
-kotoha.nes
+*.nes
 example/
 *.exe
 memo.txt
