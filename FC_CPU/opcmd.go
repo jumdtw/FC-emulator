@@ -33,6 +33,12 @@ const (
 
 	// LDYIMM:
 	LDYIMM = 0xa0
+	// LDYZERO:
+	LDYZERO = 0xa4
+	// LDYABS:
+	LDYABS = 0xac
+	// LDYABSX:
+	LDYABSX = 0xbc
 
 	// STAZERO :
 	STAZERO = 0x85
@@ -52,24 +58,84 @@ const (
 	// STXABS :
 	STXABS = 0x8e
 
+	// STYZERO :
+	STYZERO = 0x84
+	// STYABS :
+	STYABS = 0x8c
+
+	// DECZERO :
+	DECZERO = 0xc6
+	// DECABS :
+	DECABS = 0xce
+	// DECABSX :
+	DECABSX = 0xde
+
 	// DEX :
 	DEX = 0xca
 
 	// DEY :
 	DEY = 0x88
 
+	//EORIMM :
+	EORIMM = 0x49
 	//EORZERO :
 	EORZERO = 0x45
+
+	// INCZERO :
+	INCZERO = 0xe6
+	// INCABS :
+	INCABS = 0xee
 
 	// INX :
 	INX = 0xe8
 	// INY :
 	INY = 0xc8
 
+	// LSRIMM :
+	LSRIMM = 0x4a
+	// LSRZERO :
+	LSRZERO = 0x46
+	// LSRABS :
+	LSRABS = 0x4e
+
+	// ORAIMM :
+	ORAIMM = 0x09
+	// ORAZERO :
+	ORAZERO = 0x05
+	// ORAABS :
+	ORAABS = 0x0d
+
+	// ROLIMM :
+	ROLIMM = 0x2a
+	// ROLZERO :
+	ROLZERO = 0x26
+	// ROLABS :
+	ROLABS = 0x2e
+
+	// RORIMM :
+	RORIMM = 0x6a
+	// RORABSX :
+	RORABSX = 0x7e
+
+	// SBCIMM :
+	SBCIMM = 0xe9
+	// SBCZERO :
+	SBCZERO = 0xe5
+	// SBCZEROX :
+	SBCZEROX = 0xf5
+	// SBCABS :
+	SBCABS = 0xed
+	// SBCABSY :
+	SBCABSY = 0xf9
+
+	// BCC :
+	BCC = 0x90
 	// BCS :
 	BCS = 0xb0
 	// BEQ :
 	BEQ = 0xf0
+	// BMI :
+	BMI = 0x30
 	// BNE :
 	BNE = 0xd0
 	// BPL :
@@ -94,20 +160,42 @@ const (
 	ADCIMM = 0x69
 	// ADCZERO :
 	ADCZERO = 0x65
+	// ADCZEROX :
+	ADCZEROX = 0x75
 	// ADCABS :
 	ADCABS = 0x6d
+	// ADCABSX :
+	ADCABSX = 0x7d
+	// ADCABSY :
+	ADCABSY = 0x79
 
 	// ANDIMM : 
 	ANDIMM = 0x29
+	// ANDABS : 
+	ANDABS = 0x2d
+	// ANDABSX : 
+	ANDABSX = 0x3d
 
-	// ASLACC :
-	ASLACC = 0x0a
+	// ASLIMM :
+	ASLIMM = 0x0a
+	// ASLABS :
+	ASLABS = 0x0e
 
+	// BITZERO :
+	BITZERO = 0x24
 	// BITABS :
 	BITABS = 0x2c
 
 	// CMPIMM :
 	CMPIMM = 0xc9
+	// CMPZERO :
+	CMPZERO = 0xc5
+	// CMPABS :
+	CMPABS = 0xcd
+	// CMPABSX :
+	CMPABSX = 0xdd
+	// CMPABSY :
+	CMPABSY = 0xd9
 
 	// CPX :
 	CPXIMM = 0xe0
@@ -115,8 +203,10 @@ const (
 	// CPY :
 	CPYIMM = 0xc0
 
-	// JMP :
-	JMP = 0x4c
+	// JMPABS :
+	JMPABS = 0x4c
+	// JMPIND :
+	JMPIND = 0x6c
 
 	// JSR :
 	JSR = 0x20
@@ -141,19 +231,31 @@ const (
 	// CLI : 
 	CLI = 0x58
 
+	// SEC :
+	SEC = 0x38
+
 	// SEI :
 	SEI = 0x78
 )
 
+func read_ppustatic(fcEmu *CpuEmu, pos uint16){
+
+}
+
 func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
+
+	//fmt.Printf("now sta pos : 0x%x, memoryvalue : 0x%x\n",pos,fcEmu.Memory[pos])
+
 	// 0x2006だったらppuへのアクセス
 	if pos == 0x2006 {
 		fcEmu.VramAddr = fcEmu.VramAddr << 8
 		fcEmu.VramAddr += uint16(fcEmu.Regi[reg])
+		//fmt.Printf("change vram pos : 0x%x !!!!!!!!!!!!!!!!!!\n",fcEmu.Regi[reg])
 	}
 	if pos == 0x2007 {
 		fcEmu.VramWriteFlag = true
 		fcEmu.VramWriteValue = fcEmu.Regi[reg]
+		//fmt.Printf("vram write : 0x%x ????????????????\n", fcEmu.Regi[reg])
 	}else {
 		fcEmu.VramWriteFlag = false
 	}
@@ -173,9 +275,25 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 		}
 		fcEmu.OamWritecount++
 	}
+
+	if pos == 0x2002{
+		fcEmu.VramAddr = 0
+		//fmt.Println("reset scroll")
+	}
+
+	if pos == 0x2005 {
+		//fmt.Printf("scroll x or y : 0x%x\n",fcEmu.Regi[reg])
+	}
+
+	if pos == 0x4014 {
+		//fmt.Println("send sprite DMA!!!!")
+		fcEmu.DAMflag = true
+		fcEmu.DAMvalue = fcEmu.Regi[reg]
+	}
 }
 
 func padread(fcEmu *CpuEmu, pos uint16){
+	//fmt.Printf("pad read : 0x%x\n",pos)
 	// 0x4016 はパッドの読み込み
 	if pos == 0x4016 {
 		fcEmu.BotmReadcount++
@@ -183,7 +301,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// A
 		case 1:
 			if fcEmu.Abotmflag {
-				fcEmu.Abotmflag = false 
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -191,7 +308,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// B
 		case 2:
 			if fcEmu.Bbotmflag {
-				fcEmu.Bbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -199,7 +315,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// Select
 		case 3:
 			if fcEmu.Selectbotmflag {
-				fcEmu.Selectbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -207,7 +322,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// Start
 		case 4:
 			if fcEmu.Startbotmflag {
-				fcEmu.Startbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -215,7 +329,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// up
 		case 5:
 			if fcEmu.Upbotmflag {
-				fcEmu.Upbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -223,7 +336,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// down
 		case 6:
 			if fcEmu.Downbotmflag {
-				fcEmu.Downbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -231,7 +343,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// left
 		case 7:
 			if fcEmu.Leftbotmflag {
-				fcEmu.Leftbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -239,7 +350,6 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		// right
 		case 8:
 			if fcEmu.Rightbotmflag {
-				fcEmu.Rightbotmflag = false
 				fcEmu.Memory[pos] = 1
 			}else{
 				fcEmu.Memory[pos] = 0
@@ -328,6 +438,9 @@ func cflagset(fcEmu *CpuEmu,x uint16){
 	}
 }
 
+
+
+
 // LDA
 func (fcEmu *CpuEmu) ldaImm() {
 	fcEmu.Regi["A"] = fcEmu.Memory[fcEmu.RegPc]
@@ -383,22 +496,27 @@ func (fcEmu *CpuEmu) ldaAbsY() {
 	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 func (fcEmu *CpuEmu) ldaIndX() {
-	var absposlow uint8 = uint8(fcEmu.Memory[fcEmu.RegPc])
-	var xreg uint8 = uint8(fcEmu.Regi["X"])
-	var mempos uint16 = uint16(absposlow + xreg)
-	var pos uint8 = fcEmu.Memory[mempos]
+	var xreg uint16 = uint16(fcEmu.Regi["X"])
+	var immaddr uint16 = uint16(fcEmu.Memory[fcEmu.RegPc]) + xreg
+	var highpos uint16 = uint16(fcEmu.Memory[immaddr+1])
+	var lowpos uint16 = uint16(fcEmu.Memory[immaddr])
+	var pos uint16 = (highpos << 8) + lowpos
 	fcEmu.Regi["A"] = fcEmu.Memory[pos]
+	padread(fcEmu,pos)
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])
 	fcEmu.RegPc++
 }
 func (fcEmu *CpuEmu) ldaIndY() {
-	var mempos uint8 = uint8(fcEmu.Memory[fcEmu.RegPc])
-	var pos uint8 = fcEmu.Memory[mempos]
-	var yreg uint8 = uint8(fcEmu.Regi["Y"])
-	fcEmu.Regi["A"] = fcEmu.Memory[pos] + yreg
-	nflagset(fcEmu, fcEmu.Memory[pos] + yreg)
-	zflagset(fcEmu, fcEmu.Memory[pos] + yreg)
+	var immaddr uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var yreg uint16 = uint16(fcEmu.Regi["Y"])
+	var highpos uint16 = uint16(fcEmu.Memory[immaddr+1])
+	var lowpos uint16 = uint16(fcEmu.Memory[immaddr])
+	var pos uint16 = (highpos << 8) + lowpos + yreg
+	fcEmu.Regi["A"] = fcEmu.Memory[pos]
+	padread(fcEmu,pos)
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
 	fcEmu.RegPc++
 }
 
@@ -440,6 +558,7 @@ func (fcEmu *CpuEmu) ldxAbsY() {
 	var yreg uint16 = uint16(fcEmu.Regi["Y"])
 	var pos uint16 = (absposhigh << 8) + absposlow + yreg
 	fcEmu.Regi["X"] = fcEmu.Memory[pos]
+	padread(fcEmu,pos)
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])
 	fcEmu.RegPc = fcEmu.RegPc + 2
@@ -452,6 +571,35 @@ func (fcEmu *CpuEmu) ldyImm() {
 	zflagset(fcEmu, fcEmu.Memory[fcEmu.RegPc])
 	fcEmu.RegPc++
 }
+func (fcEmu *CpuEmu) ldyZero() {
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	padread(fcEmu,pos)
+	fcEmu.Regi["Y"] = fcEmu.Memory[pos]
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 1
+}
+func (fcEmu *CpuEmu) ldyAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	padread(fcEmu,pos)
+	fcEmu.Regi["Y"] = fcEmu.Memory[pos]
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+func (fcEmu *CpuEmu) ldyAbsX() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["X"])
+	padread(fcEmu,pos)
+	fcEmu.Regi["Y"] = fcEmu.Memory[pos]
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+
 // sta
 // 6502 はメモリマップトioなのでstaだけ命令処理以外に色々処理が入る場合が多い
 func (fcEmu *CpuEmu) staZero() {
@@ -467,8 +615,8 @@ func (fcEmu *CpuEmu) staAbs() {
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
-	ppuwrite(fcEmu,pos,"A")
 	fcEmu.Memory[pos] = fcEmu.Regi["A"]
+	ppuwrite(fcEmu,pos,"A")
 	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 func (fcEmu *CpuEmu) staAbsX() {
@@ -476,8 +624,8 @@ func (fcEmu *CpuEmu) staAbsX() {
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
 	pos = pos + uint16(fcEmu.Regi["X"])
-	ppuwrite(fcEmu,pos,"A")
 	fcEmu.Memory[pos] = fcEmu.Regi["A"]
+	ppuwrite(fcEmu,pos,"A")
 	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 func (fcEmu *CpuEmu) staAbsY() {
@@ -485,17 +633,20 @@ func (fcEmu *CpuEmu) staAbsY() {
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
 	pos = pos + uint16(fcEmu.Regi["Y"])
-	ppuwrite(fcEmu,pos,"A")
 	fcEmu.Memory[pos] = fcEmu.Regi["A"]
+	ppuwrite(fcEmu,pos,"A")
 	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 func (fcEmu *CpuEmu) staIndY() {
-	var mempos uint8 = uint8(fcEmu.Memory[fcEmu.RegPc])
-	var pos uint8 = fcEmu.Memory[mempos]
-	var yreg uint8 = uint8(fcEmu.Regi["Y"])
-	fcEmu.Memory[pos] = fcEmu.Regi["A"] + yreg
-	nflagset(fcEmu, fcEmu.Memory[pos] + yreg)
-	zflagset(fcEmu, fcEmu.Memory[pos] + yreg)
+	var immaddr uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var yreg uint16 = uint16(fcEmu.Regi["Y"])
+	var highpos uint16 = uint16(fcEmu.Memory[immaddr+1])
+	var lowpos uint16 = uint16(fcEmu.Memory[immaddr])
+	var pos uint16 = (highpos << 8) + lowpos + yreg
+	fcEmu.Memory[pos] = fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	ppuwrite(fcEmu,pos,"A")
 	fcEmu.RegPc++
 }
 
@@ -503,14 +654,93 @@ func (fcEmu *CpuEmu) staIndY() {
 func (fcEmu *CpuEmu) stxZero() {
 	var pos uint8 = fcEmu.Memory[fcEmu.RegPc]
 	fcEmu.Memory[pos] = fcEmu.Regi["X"]
+	ppuwrite(fcEmu,uint16(pos),"X")
 	fcEmu.RegPc++
 }
 func (fcEmu *CpuEmu) stxAbs() {
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
-	ppuwrite(fcEmu,pos,"X")
 	fcEmu.Memory[pos] = fcEmu.Regi["X"]
+	ppuwrite(fcEmu,pos,"X")
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+
+// sty
+func (fcEmu *CpuEmu) styZero() {
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	fcEmu.Memory[pos] = fcEmu.Regi["Y"]
+	ppuwrite(fcEmu,pos,"Y")
+	fcEmu.RegPc = fcEmu.RegPc + 1
+}
+func (fcEmu *CpuEmu) styAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.Memory[pos] = fcEmu.Regi["Y"]
+	ppuwrite(fcEmu,pos,"Y")
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+
+// tax
+func (fcEmu *CpuEmu) tax() {
+	fcEmu.Regi["X"] = fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+}
+
+// tay
+func (fcEmu *CpuEmu) tay() {
+	fcEmu.Regi["Y"] = fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+}
+
+// txa
+func (fcEmu *CpuEmu) txa() {
+	fcEmu.Regi["A"] = fcEmu.Regi["X"]
+	nflagset(fcEmu, fcEmu.Regi["X"])
+	zflagset(fcEmu, fcEmu.Regi["X"])
+}
+
+// txs
+func (fcEmu *CpuEmu) txs() {
+	fcEmu.Regi["S"] = fcEmu.Regi["X"]
+	nflagset(fcEmu, fcEmu.Regi["X"])
+	zflagset(fcEmu, fcEmu.Regi["X"])
+}
+
+// tya
+func (fcEmu *CpuEmu) tya() {
+	fcEmu.Regi["A"] = fcEmu.Regi["Y"]
+	nflagset(fcEmu, fcEmu.Regi["Y"])
+	zflagset(fcEmu, fcEmu.Regi["Y"])
+}
+
+// dec
+func (fcEmu *CpuEmu) decZero() {
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] - 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) decAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] - 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+func (fcEmu *CpuEmu) decAbsX() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["X"])
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] - 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
 	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 
@@ -521,7 +751,6 @@ func (fcEmu *CpuEmu) deX() {
 	zflagset(fcEmu, fcEmu.Regi["X"])
 }
 
-
 // dey
 func (fcEmu *CpuEmu) deY() {
 	fcEmu.Regi["Y"] = fcEmu.Regi["Y"] - 1
@@ -530,12 +759,36 @@ func (fcEmu *CpuEmu) deY() {
 }
 
 // eor
+func (fcEmu *CpuEmu) eorImm() {
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] ^ fcEmu.Memory[fcEmu.RegPc]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	fcEmu.RegPc++
+}
 func (fcEmu *CpuEmu) eorZero() {
 	var pos uint8 = fcEmu.Memory[fcEmu.RegPc]
 	fcEmu.Regi["A"] = fcEmu.Regi["A"] ^ fcEmu.Memory[pos]
 	nflagset(fcEmu, fcEmu.Regi["A"])
 	zflagset(fcEmu, fcEmu.Regi["A"])
 	fcEmu.RegPc++
+}
+
+// inc
+func (fcEmu *CpuEmu) incZero() {
+	var pos uint8 = fcEmu.Memory[fcEmu.RegPc]
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] + 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) incAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] + 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 
 // inx
@@ -550,6 +803,223 @@ func (fcEmu *CpuEmu) inY() {
 	fcEmu.Regi["Y"] = fcEmu.Regi["Y"] + 1
 	nflagset(fcEmu, fcEmu.Regi["Y"])
 	zflagset(fcEmu, fcEmu.Regi["Y"])
+}
+
+// lsr
+func (fcEmu *CpuEmu) lsrImm() {
+	lowbit := fcEmu.Regi["A"] & 0x01
+	if lowbit == 0x01 {
+		cflagset(fcEmu, 0x0100)
+	}
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] >> 1
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+}
+func (fcEmu *CpuEmu) lsrZero() {
+	var pos uint8 = fcEmu.Memory[fcEmu.RegPc]
+	lowbit := fcEmu.Memory[pos] & 0x01
+	if lowbit == 0x01 {
+		cflagset(fcEmu, 0x0100)
+	}
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] >> 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) lsrAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	lowbit := fcEmu.Memory[pos] & 0x01
+	if lowbit == 0x01 {
+		cflagset(fcEmu, 0x0100)
+	}
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] >> 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc+=2
+}
+
+// ora 
+func (fcEmu *CpuEmu) oraImm(){
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] | fcEmu.Memory[fcEmu.RegPc]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) oraZero(){
+	var pos uint8 = fcEmu.Memory[fcEmu.RegPc]
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] | fcEmu.Memory[pos]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) oraAbs(){
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] | fcEmu.Memory[pos]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	fcEmu.RegPc+=2
+}
+
+// rol
+func (fcEmu *CpuEmu) rolImm(){
+	var highbit uint8 = fcEmu.Regi["A"] & 0b10000000
+	if highbit == 0b10000000 {
+		cflagset(fcEmu, 0x0100)
+	}
+	highbit = highbit >> 7
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] << 1
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] + highbit
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+}
+func (fcEmu *CpuEmu) rolZero(){
+	var pos uint8 = fcEmu.Memory[fcEmu.RegPc]
+	var highbit uint8 = fcEmu.Memory[pos] & 0b10000000
+	if highbit == 0b10000000 {
+		cflagset(fcEmu, 0x0100)
+	}
+	highbit = highbit >> 7
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] << 1
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] + highbit
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) rolAbs(){
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	var highbit uint8 = fcEmu.Memory[pos] & 0b10000000
+	if highbit == 0b10000000 {
+		cflagset(fcEmu, 0x0100)
+	}
+	highbit = highbit >> 7
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] << 1
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] + highbit
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc+=2
+}
+
+// ror
+func (fcEmu *CpuEmu) rorImm(){
+	var lowbit uint8 = fcEmu.Regi["A"] & 0b00000001
+	if lowbit == 0x01 {
+		cflagset(fcEmu, 0x0100)
+	}
+	lowbit = lowbit << 7
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] >> 1
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] + lowbit
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+}
+func (fcEmu *CpuEmu) rorAbsX(){
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["X"])
+	var lowbit uint8 = fcEmu.Memory[pos] & 0b00000001
+	if lowbit == 0x01 {
+		cflagset(fcEmu, 0x0100)
+	}
+	lowbit = lowbit << 7
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] >> 1
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] + lowbit
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc+=2
+}
+
+// sbc
+func (fcEmu *CpuEmu) sbcImm() {
+	// cflag の反転
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	clflag = ^clflag
+	clflag = clflag & 0x01
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] - fcEmu.Memory[fcEmu.RegPc] - clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Regi["A"]) - uint16(fcEmu.Memory[fcEmu.RegPc]) - uint16(clflag))
+	vflagset(fcEmu, fcEmu.Regi["A"], fcEmu.Memory[fcEmu.RegPc], clflag,false)
+	fcEmu.RegPc+=1
+}
+func (fcEmu *CpuEmu) sbcZero() {
+	// cflag の反転
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	clflag = ^clflag
+	clflag = clflag & 0x01
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] - fcEmu.Memory[pos] - clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Regi["A"]) - uint16(fcEmu.Memory[pos]) - uint16(clflag))
+	vflagset(fcEmu, fcEmu.Regi["A"], fcEmu.Memory[pos], clflag,false)
+	fcEmu.RegPc+=1
+}
+func (fcEmu *CpuEmu) sbcZeroX() {
+	// cflag の反転
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	clflag = ^clflag
+	clflag = clflag & 0x01
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc]) + uint16(fcEmu.Regi["X"])
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] - fcEmu.Memory[pos] - clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Regi["A"]) - uint16(fcEmu.Memory[pos]) - uint16(clflag))
+	vflagset(fcEmu, fcEmu.Regi["A"], fcEmu.Memory[pos], clflag,false)
+	fcEmu.RegPc+=1
+}
+func (fcEmu *CpuEmu) sbcAbs() {
+	// cflag の反転
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	clflag = ^clflag
+	clflag = clflag & 0x01
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] - fcEmu.Memory[pos] - clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Regi["A"]) - uint16(fcEmu.Memory[pos]) - uint16(clflag))
+	vflagset(fcEmu, fcEmu.Regi["A"], fcEmu.Memory[pos], clflag,false)
+	fcEmu.RegPc+=2
+}
+func (fcEmu *CpuEmu) sbcAbsY() {
+	// cflag の反転
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	clflag = ^clflag
+	clflag = clflag & 0x01
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["Y"])
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] - fcEmu.Memory[pos] - clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Regi["A"]) - uint16(fcEmu.Memory[pos]) - uint16(clflag))
+	vflagset(fcEmu, fcEmu.Regi["A"], fcEmu.Memory[pos], clflag,false)
+	fcEmu.RegPc+=2
+}
+
+// bcc
+func (fcEmu *CpuEmu) bcc() {
+	zeroflag := fcEmu.Regi["P"] & 0b00000001
+	if zeroflag == 0b00000000 {
+		bufPC := uint16(fcEmu.RegPc)
+		minusflag := fcEmu.Memory[fcEmu.RegPc] & 0b10000000
+		var imm uint16
+		if minusflag == 0b10000000 {
+			var minussign uint16 = 0xff00
+			imm = uint16(fcEmu.Memory[fcEmu.RegPc]) + uint16(minussign)
+		} else {
+			imm = uint16(fcEmu.Memory[fcEmu.RegPc])
+		}
+		bufPC = bufPC + imm
+		fcEmu.RegPc = uint16(bufPC)
+	}
+	fcEmu.RegPc++
 }
 
 // bcs
@@ -590,6 +1060,25 @@ func (fcEmu *CpuEmu) beq() {
 	fcEmu.RegPc++
 }
 
+// bmi
+func (fcEmu *CpuEmu) bmi() {
+	nflag := fcEmu.Regi["P"] & 0b10000000
+	if nflag == 0x80 {
+		bufPC := int16(fcEmu.RegPc)
+		minusflag := fcEmu.Memory[fcEmu.RegPc] & 0b10000000
+		var imm int16
+		if minusflag > 0 {
+			var minussign uint16 = 0xff00
+			imm = int16(fcEmu.Memory[fcEmu.RegPc]) + int16(minussign)
+		} else {
+			imm = int16(fcEmu.Memory[fcEmu.RegPc])
+		}
+		bufPC = bufPC + imm
+		fcEmu.RegPc = uint16(bufPC)
+	}
+	fcEmu.RegPc++
+}
+
 // bne
 func (fcEmu *CpuEmu) bne() {
 	zeroflag := fcEmu.Regi["P"] & 0b00000010
@@ -612,7 +1101,7 @@ func (fcEmu *CpuEmu) bne() {
 // bpl
 func (fcEmu *CpuEmu) bpl() {
 	zeroflag := fcEmu.Regi["P"] & 0b10000000
-	if zeroflag != 0b10000000 {
+	if zeroflag == 0b00000000 {
 		bufPC := int16(fcEmu.RegPc)
 		minusflag := fcEmu.Memory[fcEmu.RegPc] & 0b10000000
 		var imm int16
@@ -626,41 +1115,6 @@ func (fcEmu *CpuEmu) bpl() {
 		fcEmu.RegPc = uint16(bufPC)
 	}
 	fcEmu.RegPc++
-}
-
-// tax
-func (fcEmu *CpuEmu) tax() {
-	fcEmu.Regi["X"] = fcEmu.Regi["A"]
-	nflagset(fcEmu, fcEmu.Regi["A"])
-	zflagset(fcEmu, fcEmu.Regi["A"])
-}
-
-// tay
-func (fcEmu *CpuEmu) tay() {
-	fcEmu.Regi["Y"] = fcEmu.Regi["A"]
-	nflagset(fcEmu, fcEmu.Regi["A"])
-	zflagset(fcEmu, fcEmu.Regi["A"])
-}
-
-// txa
-func (fcEmu *CpuEmu) txa() {
-	fcEmu.Regi["A"] = fcEmu.Regi["X"]
-	nflagset(fcEmu, fcEmu.Regi["X"])
-	zflagset(fcEmu, fcEmu.Regi["X"])
-}
-
-// txs
-func (fcEmu *CpuEmu) txs() {
-	fcEmu.Regi["S"] = fcEmu.Regi["X"]
-	nflagset(fcEmu, fcEmu.Regi["X"])
-	zflagset(fcEmu, fcEmu.Regi["X"])
-}
-
-// tya
-func (fcEmu *CpuEmu) tya() {
-	fcEmu.Regi["A"] = fcEmu.Regi["Y"]
-	nflagset(fcEmu, fcEmu.Regi["Y"])
-	zflagset(fcEmu, fcEmu.Regi["Y"])
 }
 
 // adc
@@ -684,6 +1138,16 @@ func (fcEmu *CpuEmu) adcZero() {
 	vflagset(fcEmu, fcEmu.Memory[pos], fcEmu.Regi["A"], clflag,true)
 	fcEmu.RegPc++
 }
+func (fcEmu *CpuEmu) adcZeroX() {
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc]) + uint16(fcEmu.Regi["X"])
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] + fcEmu.Regi["A"] + clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Memory[pos]) + uint16(fcEmu.Regi["A"]) + uint16(clflag))
+	vflagset(fcEmu, fcEmu.Memory[pos], fcEmu.Regi["A"], clflag,true)
+	fcEmu.RegPc++
+}
 func (fcEmu *CpuEmu) adcAbs() {
 	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
@@ -696,19 +1160,96 @@ func (fcEmu *CpuEmu) adcAbs() {
 	vflagset(fcEmu, fcEmu.Memory[pos], fcEmu.Regi["A"], clflag,true)
 	fcEmu.RegPc+=2
 }
+func (fcEmu *CpuEmu) adcAbsX() {
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["X"])
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] + fcEmu.Regi["A"] + clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Memory[pos]) + uint16(fcEmu.Regi["A"]) + uint16(clflag))
+	vflagset(fcEmu, fcEmu.Memory[pos], fcEmu.Regi["A"], clflag,true)
+	fcEmu.RegPc+=2
+}
+func (fcEmu *CpuEmu) adcAbsY() {
+	var clflag uint8 = fcEmu.Regi["P"] & 0b00000001
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["Y"])
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] + fcEmu.Regi["A"] + clflag
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	cflagset(fcEmu, uint16(fcEmu.Memory[pos]) + uint16(fcEmu.Regi["A"]) + uint16(clflag))
+	vflagset(fcEmu, fcEmu.Memory[pos], fcEmu.Regi["A"], clflag,true)
+	fcEmu.RegPc+=2
+}
 
 // and 
 func (fcEmu *CpuEmu) andImm(){
 	fcEmu.Regi["A"] = fcEmu.Regi["A"] & fcEmu.Memory[fcEmu.RegPc]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
 	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) andAbs(){
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] & fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+func (fcEmu *CpuEmu) andAbsX(){
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var xreg uint16 = uint16(fcEmu.Regi["X"])
+	var pos uint16 = (absposhigh << 8) + absposlow + xreg
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] & fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 
 // asl 
-func (fcEmu *CpuEmu) aslAcc() {
-	fcEmu.Regi["A"] = fcEmu.Regi["A"] >> 1
+func (fcEmu *CpuEmu) aslImm() {
+	var highbit uint8 = fcEmu.Regi["A"] & 0b10000000
+	if highbit == 0x80 {
+		cflagset(fcEmu, 0x0100)
+	}
+	fcEmu.Regi["A"] = fcEmu.Regi["A"] << 1
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+}
+func (fcEmu *CpuEmu) aslAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	var highbit uint8 = fcEmu.Memory[pos] & 0b10000000
+	if highbit == 0x80 {
+		cflagset(fcEmu, 0x0100)
+	}
+	fcEmu.Memory[pos] = fcEmu.Memory[pos] << 1
+	nflagset(fcEmu, fcEmu.Memory[pos])
+	zflagset(fcEmu, fcEmu.Memory[pos])
+	fcEmu.RegPc = fcEmu.RegPc + 2
 }
 
 // bit
+func (fcEmu *CpuEmu) bitZero() {
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var imm uint8 = fcEmu.Memory[pos]
+	var regA uint8 = fcEmu.Regi["A"]
+	if imm > regA {
+		nflagset(fcEmu, 0b10000000)
+	}
+	if imm == regA {
+		zflagset(fcEmu, 0)
+	}
+	vflagset(fcEmu,imm, regA, 0,false)
+	fcEmu.RegPc+=1
+}
 func (fcEmu *CpuEmu) bitAbs() {
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
@@ -731,12 +1272,135 @@ func (fcEmu *CpuEmu) cmpImm() {
 	var regA uint8 = fcEmu.Regi["A"]
 	if imm > regA {
 		nflagset(fcEmu, 0b10000000)
-		cflagset(fcEmu, 0x0100)
+	}else{
+		nflagset(fcEmu, 0)
 	}
+
 	if imm == regA {
 		zflagset(fcEmu, 0)
+	}else{
+		zflagset(fcEmu, 1)
 	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regA) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
 	fcEmu.RegPc++
+}
+func (fcEmu *CpuEmu) cmpZero() {
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var imm uint8 = fcEmu.Memory[pos]
+	var regA uint8 = fcEmu.Regi["A"]
+	if imm > regA {
+		nflagset(fcEmu, 0b10000000)
+	}else{
+		nflagset(fcEmu, 0)
+	}
+
+	if imm == regA {
+		zflagset(fcEmu, 0)
+	}else{
+		zflagset(fcEmu, 1)
+	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regA) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
+	fcEmu.RegPc+=1
+}
+func (fcEmu *CpuEmu) cmpAbs() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow
+	var imm uint8 = fcEmu.Memory[pos]
+	var regA uint8 = fcEmu.Regi["A"]
+	if imm > regA {
+		nflagset(fcEmu, 0b10000000)
+	}else{
+		nflagset(fcEmu, 0)
+	}
+
+	if imm == regA {
+		zflagset(fcEmu, 0)
+	}else{
+		zflagset(fcEmu, 1)
+	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regA) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
+	fcEmu.RegPc+=2
+}
+func (fcEmu *CpuEmu) cmpAbsX() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["X"])
+	var imm uint8 = fcEmu.Memory[pos]
+	var regA uint8 = fcEmu.Regi["A"]
+	if imm > regA {
+		nflagset(fcEmu, 0b10000000)
+	}else{
+		nflagset(fcEmu, 0)
+	}
+
+	if imm == regA {
+		zflagset(fcEmu, 0)
+	}else{
+		zflagset(fcEmu, 1)
+	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regA) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
+	fcEmu.RegPc+=2
+}
+func (fcEmu *CpuEmu) cmpAbsY() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var pos uint16 = (absposhigh << 8) + absposlow + uint16(fcEmu.Regi["Y"])
+	var imm uint8 = fcEmu.Memory[pos]
+	var regA uint8 = fcEmu.Regi["A"]
+	if imm > regA {
+		nflagset(fcEmu, 0b10000000)
+	}else{
+		nflagset(fcEmu, 0)
+	}
+
+	if imm == regA {
+		zflagset(fcEmu, 0)
+	}else{
+		zflagset(fcEmu, 1)
+	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regA) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
+	fcEmu.RegPc+=2
 }
 
 // cpx レジスタ-メモリ
@@ -745,11 +1409,24 @@ func (fcEmu *CpuEmu) cpxImm() {
 	var regX uint8 = fcEmu.Regi["X"]
 	if imm > regX {
 		nflagset(fcEmu, 0b10000000)
-		cflagset(fcEmu, 0x0100)
+	}else{
+		nflagset(fcEmu, 0)
 	}
+
 	if imm == regX {
 		zflagset(fcEmu, 0)
+	}else{
+		zflagset(fcEmu, 1)
 	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regX) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
 	fcEmu.RegPc++
 }
 
@@ -759,20 +1436,38 @@ func (fcEmu *CpuEmu) cpyImm() {
 	var regY uint8 = fcEmu.Regi["Y"]
 	if imm > regY {
 		nflagset(fcEmu, 0b10000000)
-		cflagset(fcEmu, 0x0100)
 	}
+
 	if imm == regY {
 		zflagset(fcEmu, 0)
 	}
+
+	imm = ^imm
+	var cflagvar uint16 = uint16(regY) + uint16(imm)
+	if cflagvar > 0x00ff{
+		cflagset(fcEmu, 0x0100)
+	}else{
+		cflagset(fcEmu, 0)
+	}
+
 	fcEmu.RegPc++
 }
 
 
 // jmp
-func (fcEmu *CpuEmu) jmp() {
+func (fcEmu *CpuEmu) jmpAbs() {
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
+	fcEmu.RegPc = pos
+}
+func (fcEmu *CpuEmu) jmpInd() {
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var indpos uint16 = (absposhigh << 8) + absposlow
+	lowpos := uint16(fcEmu.Memory[indpos])
+	highpos := uint16(fcEmu.Memory[indpos+1])
+	pos := (highpos << 8) + lowpos
 	fcEmu.RegPc = pos
 }
 
@@ -782,15 +1477,14 @@ func (fcEmu *CpuEmu) jsr() {
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var pos uint16 = (absposhigh << 8) + absposlow
-	// スタックに現在のPCを積む
-	var sppos uint16 = 0x1000 + uint16(fcEmu.Regi["S"])
+	// スタックに現在のPC＋２を積む
+	var sppos uint16 = 0x0100 + uint16(fcEmu.Regi["S"])
 	// 0x4050 だったら　50 40 の順でスタックに積む。個々の動作は等で確認が取れていないためこのエミュレータだけの可能性あり。
-	lowaddr := fcEmu.RegPc & 0x00ff
-	lowaddr = lowaddr - 1
-	highaddr := fcEmu.RegPc & 0xff00
+	lowaddr := (fcEmu.RegPc+1) & 0x00ff
+	highaddr := (fcEmu.RegPc+1) & 0xff00
 	highaddr = highaddr >> 8
-	fcEmu.Memory[sppos] = uint8(lowaddr)
-	fcEmu.Memory[sppos-1] = uint8(highaddr)
+	fcEmu.Memory[sppos-1] = uint8(lowaddr)
+	fcEmu.Memory[sppos] = uint8(highaddr)
 	fcEmu.Regi["S"] = fcEmu.Regi["S"] - 2
 	fcEmu.RegPc = pos
 }
@@ -801,15 +1495,15 @@ func (fcEmu *CpuEmu) rts(){
 		panic("stack error: dont jsr when no push.")
 	}
 	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
-	var sppos uint16 = 0x1000 + uint16(fcEmu.Regi["S"])
+	var sppos uint16 = 0x0100 + uint16(fcEmu.Regi["S"])
+	lowaddr := fcEmu.Memory[sppos]
+	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
+	sppos = 0x0100 + uint16(fcEmu.Regi["S"])
 	highaddr := fcEmu.Memory[sppos]
 	var Raddr uint16 = uint16(highaddr)
 	Raddr = Raddr << 8
-	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
-	sppos = 0x1000 + uint16(fcEmu.Regi["S"])
-	lowaddr := fcEmu.Memory[sppos]
 	Raddr += uint16(lowaddr)
-	fcEmu.RegPc = Raddr
+	fcEmu.RegPc = Raddr + 1
 }
 
 // rti ※rstと違いフラッグ処理がたくさん入る
@@ -817,14 +1511,19 @@ func (fcEmu *CpuEmu) rti(){
 	if fcEmu.Regi["S"] > 0xff {
 		panic("stack error: dont jsr when no push.")
 	}
+	// p reg 
 	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
-	var sppos uint16 = 0x1000 + uint16(fcEmu.Regi["S"])
+	var sppos uint16 = 0x0100 + uint16(fcEmu.Regi["S"])
+	fcEmu.Regi["P"] = fcEmu.Memory[sppos]
+	// return addr
+	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
+	sppos = 0x0100 + uint16(fcEmu.Regi["S"])
+	lowaddr := fcEmu.Memory[sppos]
+	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
+	sppos = 0x0100 + uint16(fcEmu.Regi["S"])
 	highaddr := fcEmu.Memory[sppos]
 	var Raddr uint16 = uint16(highaddr)
 	Raddr = Raddr << 8
-	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
-	sppos = 0x1000 + uint16(fcEmu.Regi["S"])
-	lowaddr := fcEmu.Memory[sppos]
 	Raddr += uint16(lowaddr)
 	fcEmu.RegPc = Raddr
 	fcEmu.InterruptFlag = false
@@ -832,7 +1531,7 @@ func (fcEmu *CpuEmu) rti(){
 
 // pha
 func (fcEmu *CpuEmu) pha() {
-	var sppos uint16 = 0x1000 + uint16(fcEmu.Regi["S"])
+	var sppos uint16 = 0x0100 + uint16(fcEmu.Regi["S"])
 	fcEmu.Memory[sppos] = fcEmu.Regi["A"]
 	fcEmu.Regi["S"] = fcEmu.Regi["S"] - 1
 }
@@ -843,13 +1542,12 @@ func (fcEmu *CpuEmu) pla() {
 		panic("stack error: dont pla when no push.")
 	}
 	fcEmu.Regi["S"] = fcEmu.Regi["S"] + 1
-	var sppos uint16 = 0x1000 + uint16(fcEmu.Regi["S"])
+	var sppos uint16 = 0x0100 + uint16(fcEmu.Regi["S"])
 	fcEmu.Regi["A"] = fcEmu.Memory[sppos]
 }
 
 func (fcEmu *CpuEmu) clc() {
 	fcEmu.Regi["P"] = fcEmu.Regi["P"] & 0b11111110
-	cflagset(fcEmu,0)
 }
 
 func (fcEmu *CpuEmu) cld() {
@@ -858,6 +1556,11 @@ func (fcEmu *CpuEmu) cld() {
 
 func (fcEmu *CpuEmu) cli() {
 	fcEmu.Regi["P"] = fcEmu.Regi["P"] & 0b11111011
+}
+
+func (fcEmu *CpuEmu) sec() {
+	fcEmu.Regi["P"] = fcEmu.Regi["P"] & 0b11111110
+	fcEmu.Regi["P"] = fcEmu.Regi["P"] + 0b00000001
 }
 
 func (fcEmu *CpuEmu) sei() {
@@ -907,6 +1610,12 @@ func (fcEmu *CpuEmu) Execute() int {
 	// ldy
 	case LDYIMM:
 		fcEmu.ldyImm()
+	case LDYZERO:
+		fcEmu.ldyZero()
+	case LDYABS:
+		fcEmu.ldyAbs()
+	case LDYABSX:
+		fcEmu.ldyAbsX()
 	// sta
 	case STAZERO:
 		fcEmu.staZero()
@@ -925,6 +1634,18 @@ func (fcEmu *CpuEmu) Execute() int {
 		fcEmu.stxZero()
 	case STXABS:
 		fcEmu.stxAbs()
+	// sty
+	case STYZERO:
+		fcEmu.styZero()
+	case STYABS:
+		fcEmu.styAbs()
+	// dec
+	case DECZERO:
+		fcEmu.decZero()
+	case DECABS:
+		fcEmu.decAbs()
+	case DECABSX:
+		fcEmu.decAbsX()
 	// dex
 	case DEX:
 		fcEmu.deX()
@@ -932,20 +1653,70 @@ func (fcEmu *CpuEmu) Execute() int {
 	case DEY:
 		fcEmu.deY()
 	// eor
+	case EORIMM:
+		fcEmu.eorImm()
 	case EORZERO:
 		fcEmu.eorZero()
+	// inc
+	case INCZERO:
+		fcEmu.incZero()
+	case INCABS:
+		fcEmu.incAbs()
 	// inx
 	case INX:
 		fcEmu.inX()
 	// iny
 	case INY:
 		fcEmu.inY()
+	// lsr
+	case LSRIMM:
+		fcEmu.lsrImm()
+	case LSRZERO:
+		fcEmu.lsrZero()
+	case LSRABS:
+		fcEmu.lsrAbs()
+	// ora
+	case ORAIMM:
+		fcEmu.oraImm()
+	case ORAZERO:
+		fcEmu.oraZero()
+	case ORAABS:
+		fcEmu.oraAbs()
+	// rol
+	case ROLIMM:
+		fcEmu.rolImm()
+	case ROLZERO:
+		fcEmu.rolZero()
+	case ROLABS:
+		fcEmu.rolAbs()
+	// ror
+	case RORIMM:
+		fcEmu.rorImm()
+	case RORABSX:
+		fcEmu.rorAbsX()
+	// sbc
+	case SBCIMM:
+		fcEmu.sbcImm()
+	case SBCZERO:
+		fcEmu.sbcZero()
+	case SBCZEROX:
+		fcEmu.sbcZeroX()
+	case SBCABS:
+		fcEmu.sbcAbs()
+	case SBCABSY:
+		fcEmu.sbcAbsY()
+	// bcc
+	case BCC:
+		fcEmu.bcc()
 	// bcs
 	case BCS:
 		fcEmu.bcs()
 	// beq
 	case BEQ:
 		fcEmu.beq()
+	// bne
+	case BMI:
+		fcEmu.bmi()
 	// bne
 	case BNE:
 		fcEmu.bne()
@@ -972,20 +1743,42 @@ func (fcEmu *CpuEmu) Execute() int {
 		fcEmu.adcImm()
 	case ADCZERO:
 		fcEmu.adcZero()
+	case ADCZEROX:
+		fcEmu.adcZeroX()
 	case ADCABS:
 		fcEmu.adcAbs()
+	case ADCABSX:
+		fcEmu.adcAbsX()
+	case ADCABSY:
+		fcEmu.adcAbsY()
 	// and
 	case ANDIMM:
-		fcEmu.andImm()	
+		fcEmu.andImm()
+	case ANDABS:
+		fcEmu.andAbs()	
+	case ANDABSX:
+		fcEmu.andAbsX()	
 	// asl
-	case ASLACC:
-		fcEmu.aslAcc()	
+	case ASLIMM:
+		fcEmu.aslImm()	
+	case ASLABS:
+		fcEmu.aslAbs()
 	// bit
+	case BITZERO:
+		fcEmu.bitZero()
 	case BITABS:
 		fcEmu.bitAbs()	
 	// cmp
 	case CMPIMM:
-		fcEmu.cmpImm()	
+		fcEmu.cmpImm()
+	case CMPZERO:
+		fcEmu.cmpZero()
+	case CMPABS:
+		fcEmu.cmpAbs()	
+	case CMPABSX:
+		fcEmu.cmpAbsX()
+	case CMPABSY:
+		fcEmu.cmpAbsY()
 	// cpx
 	case CPXIMM:
 		fcEmu.cpxImm()
@@ -993,8 +1786,10 @@ func (fcEmu *CpuEmu) Execute() int {
 	case CPYIMM:
 		fcEmu.cpyImm()
 	// jmp
-	case JMP:
-		fcEmu.jmp()
+	case JMPABS:
+		fcEmu.jmpAbs()
+	case JMPIND:
+		fcEmu.jmpInd()
 	// jsr
 	case JSR:
 		fcEmu.jsr()
@@ -1019,6 +1814,9 @@ func (fcEmu *CpuEmu) Execute() int {
 	// cli
 	case CLI:
 		fcEmu.cli()
+	// sec 
+	case SEC:
+		fcEmu.sec()
 	// sei 
 	case SEI:
 		fcEmu.sei()
@@ -1026,6 +1824,7 @@ func (fcEmu *CpuEmu) Execute() int {
 	default:
 		fmt.Printf("not exist function code 0x%x\n", opcd)
 		fcEmu.RegPc = fcEmu.RegPc - 1
+		fmt.Printf("PC : 0x%x\n",fcEmu.RegPc)
 		panic("error execute")
 		//return 1
 	}

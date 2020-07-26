@@ -124,9 +124,8 @@ func Palletnumreturn(g *Game,numblock int,numtile int)(uint8){
 func Rgbreturn(g *Game,patternnum uint8,palletnum uint8,bgaddr int)(uint8,uint8,uint8){
 	var rc, gc, bc uint8
 	palletaddrhead := bgaddr + int(palletnum * 4)
-	
 	colornum := g.Ppuemu.Memory[palletaddrhead + int(patternnum)]
-
+	//fmt.Printf("palletaddrhead : 0x%x, palletnum : 0x%x, colornum : 0x%x\n", palletaddrhead, palletnum, colornum)
 	
 	// ゼロは背景色
 	if patternnum == 0 {

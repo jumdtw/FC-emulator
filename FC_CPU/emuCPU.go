@@ -35,6 +35,8 @@ type CpuEmu struct {
 	OamWriteFlag bool
 	OamWritecount int
 	OamWriteValue int
+	DAMflag bool
+	DAMvalue uint8
 
 	// pad 
 	BotmReadcount int
@@ -48,6 +50,8 @@ type CpuEmu struct {
 	Upbotmflag bool
 
 	// draw info
+	// write x pos when flag is false, write y pos when flag is true 
+	Displaywriteflag bool
 	DisplayX int
 	DisplayY int
 
@@ -60,17 +64,35 @@ type CpuEmu struct {
 }
 
 func (degemu *CpuEmu)Debug() {
+	fmt.Println("---------------------------------")
 	var Register = []string{"A", "X", "Y", "S"}
 	for _, value := range Register {
 		fmt.Print("Regi", value, " = ")
 		fmt.Printf("0x%x\n", degemu.Regi[value])
 	}
+	fmt.Println("--stack--")
+	// 現在のSPは空っぽのやつ
+	bufsp := degemu.Regi["S"]
+	ddd := 0x100+uint16(bufsp)
+	aaa := degemu.Memory[ddd]
+	for bufsp!=0xff {
+		fmt.Printf("0x%x : value 0x%x \n",ddd,aaa)
+		bufsp++
+		ddd = 0x100+uint16(bufsp)
+		aaa = degemu.Memory[ddd]
+	}
+	fmt.Printf("0x%x : value 0x%x \n",0x1ff,degemu.Memory[0x1ff])
+	fmt.Println("---------")
 	fmt.Printf("N. V. R. B. D. I. Z. C\n")
 	fmt.Printf("RegiP = 0b%08b\n",degemu.Regi["P"])
 	fmt.Printf("PC = 0x%x\n", degemu.RegPc)
 	fmt.Printf("opcd  = 0x%x\n",degemu.Memory[degemu.RegPc])
-	fmt.Printf("Memory [0] = %d\n",degemu.Memory[0])
-	fmt.Printf("Memory [0x208] = %d\n\n\n",degemu.Memory[0x208])
+	//fmt.Printf("Memory [0] = %d\n",degemu.Memory[0])
+	fmt.Printf("Memory [0x4] = 0x%x\n",degemu.Memory[0x4])
+	fmt.Printf("Memory [0x5] = 0x%x\n",degemu.Memory[0x5])
+	fmt.Printf("Memory [0x6] = 0x%x\n",degemu.Memory[0x6])
+	fmt.Printf("Memory [0x7] = 0x%x\n",degemu.Memory[0x7])
+	fmt.Printf("Memory [0x82] = 0x%x\n",degemu.Memory[0x82])
 }
 
 func initReg(fcEmu *CpuEmu) {
@@ -79,7 +101,7 @@ func initReg(fcEmu *CpuEmu) {
 	fcEmu.Regi["X"] = 0
 	fcEmu.Regi["Y"] = 0
 	fcEmu.Regi["S"] = 0xff
-	fcEmu.Regi["P"] = 0b00000000
+	fcEmu.Regi["P"] = 0b00100000
 	fcEmu.InterruptFlag = false
 }
 
@@ -116,7 +138,6 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 	bufRegpc := 0x8000
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\chickenrace2.nes`)
 	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
-	//file, err := os.Open(`C:\Users\ttnmr\HOME\6502assembler\test_nes\pulsewave_april_2009.nes`)
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\amegure.nes`)
 
 	if err != nil {
@@ -213,6 +234,26 @@ func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.BotmReadcount = 0
 	fcEmu.DisplayX = 0
 	fcEmu.DisplayY = 0
+	fcEmu.Displaywriteflag = false
+	fcEmu.DAMflag = false
+	/*
+	fcEmu.Memory[0x3f00] = 1
+	fcEmu.Memory[0x3f01] = 2
+	fcEmu.Memory[0x3f02] = 3
+	fcEmu.Memory[0x3f03] = 4
+	fcEmu.Memory[0x3f04] = 5
+	fcEmu.Memory[0x3f05] = 6
+	fcEmu.Memory[0x3f06] = 7
+	fcEmu.Memory[0x3f07] = 8
+	fcEmu.Memory[0x3f08] = 9
+	fcEmu.Memory[0x3f09] = 10
+	fcEmu.Memory[0x3f0a] = 11
+	fcEmu.Memory[0x3f0b] = 12
+	fcEmu.Memory[0x3f0c] = 13
+	fcEmu.Memory[0x3f0d] = 14
+	fcEmu.Memory[0x3f0e] = 15
+	fcEmu.Memory[0x3f0f] = 16
+	*/
 	chrrombuf := initMem(fcEmu)
 	return chrrombuf
 }
