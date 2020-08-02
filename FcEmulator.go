@@ -57,7 +57,7 @@ func cpuexecute(g *Game){
 	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
 	//g.Cpuemu.Debug()
 	g.Cpuemu.Execute()
-	//fmt.Println("----------------------------------\n\n")
+	//fmt.Println("----------------------------------\n")
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
@@ -184,16 +184,7 @@ func (g *Game) padread(){
 			g.pressed = append(g.pressed, k)
 		}
 	}
-	
-	g.Cpuemu.Abotmflag = false
-	g.Cpuemu.Bbotmflag = false
-	g.Cpuemu.Selectbotmflag = false
-	g.Cpuemu.Startbotmflag = false
-	g.Cpuemu.Leftbotmflag = false
-	g.Cpuemu.Upbotmflag = false
-	g.Cpuemu.Downbotmflag = false
-	g.Cpuemu.Rightbotmflag = false
-	
+
 	for _, p := range g.pressed {
 		// A
 		if p == g.usekey[0] {
@@ -242,39 +233,6 @@ func (g *Game) padread(){
 				g.Ppuemu.Oam[i].Sflag = 0
 			}
 		}
-		/*
-		switch p {
-		case g.usekey[0]:
-			g.Cpuemu.Abotmflag = true
-		case g.usekey[1]:
-			g.Cpuemu.Bbotmflag = true
-		case g.usekey[2]:
-			g.Cpuemu.Selectbotmflag = true
-		case g.usekey[3]:
-			g.Cpuemu.Startbotmflag = true
-		case g.usekey[4]:
-			g.Cpuemu.Downbotmflag = true
-		case g.usekey[5]:
-			g.Cpuemu.Leftbotmflag = true
-		case g.usekey[6]:
-			g.Cpuemu.Rightbotmflag = true
-		case g.usekey[7]:
-			g.Cpuemu.Upbotmflag = true
-		case g.usekey[8]:
-			g.Cpuemu.RegPc = g.Cpuemu.Resetaddr
-			g.Cpuemu.Regi["A"] = 0
-			g.Cpuemu.Regi["X"] = 0
-			g.Cpuemu.Regi["Y"] = 0
-			g.Cpuemu.Regi["S"] = 0xff
-			g.Cpuemu.Regi["P"] = 0b00000000
-			for i, _ := range g.Ppuemu.Oam{
-				g.Ppuemu.Oam[i].X = 0
-				g.Ppuemu.Oam[i].Y = 0
-				g.Ppuemu.Oam[i].Spritenum = 0
-				g.Ppuemu.Oam[i].Sflag = 0
-			}
-		}
-		*/
 	}
 }
 
@@ -306,11 +264,12 @@ func (g *Game) Update(screen *ebiten.Image) error {
 
 		for k :=0; k < 32; k++ {
 
-
+			
 			if i >= 27 {
-				pp := (i-27)*32+k
-				DrawSprite(g,pp)
+				//pp := (i-27)*32+k
+				//DrawSprite(g,pp)
 			}
+			
 			
 			// vv は n枚目のタイルの一番左上のピクセルの最初の配列番号
 			// k は一増えるごとに8pixl×ピクセル倍率分増える
@@ -322,14 +281,18 @@ func (g *Game) Update(screen *ebiten.Image) error {
 			numblock = Numblockreturn(i,k)
 			numtile = k+i*32
 			drawTile(g,vv,numblock,numtile)	
-			if k==0 && i%3 == 0{
+			if k%5 == 0 && i%3 == 0 {
 				g.padread()
-			}
-			if k%5 == 0 {
+				cpuexecute(g)
+				cpuexecute(g)
+				cpuexecute(g)
+				cpuexecute(g)
+				cpuexecute(g)
+				cpuexecute(g)
+				cpuexecute(g)
 				cpuexecute(g)
 				cp_mirrorvram(g)
 			}
-			
 		}
 	}
 
@@ -382,15 +345,12 @@ func main(){
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}  
-	
 	/*
-	for y := 0 ; y < 16 ; y++ {
-		fmt.Printf("pallet%d : 0x%x\n",y ,g.Cpuemu.Memory[0x3f00 + y])
+	for _, e := range g.Cpuemu.Exeopcdlist{
+		fmt.Printf("opcd : 0x%x\n",e)
 	}
+	*/	
 
-	for y := 0 ; y < 0x3bf ; y++ {
-		fmt.Printf("addr : 0x%x, value : 0x%x\n",0x2000+y, g.Ppuemu.Memory[0x2000+y])
-	}
-	*/
+
 
 }

@@ -416,16 +416,29 @@ func Selectbgcartridge(g *Game) uint64 {
 	return Raddr
 }
 
-func DrawSprite(g *Game, pp int){
+func selectspritecartridge(g *Game) uint64 {
+	var Raddr uint64 = 0
+	bgpatternaddr := g.Cpuemu.Memory[0x2000] & 0b00010000
+	if bgpatternaddr == 0b00010000{
+		Raddr = 0x1000
+	}
+	return Raddr
+}
 
-	
+func DrawSprite(g *Game, pp int){
 	var patternNum uint8
 	var palletnum uint8
 	oam := g.Ppuemu.Oam[pp]
 	palletnum = oam.Sflag & 0b00000011
 	spritex := oam.X
 	spritey := oam.Y + 3
-	highbit, lowbit := Romdatareturn(g,uint64(0x1000)+uint64(oam.Spritenum*16))
+	// selectspritecartridge
+	var raddr uint64 = 0x1000
+	bgpatternaddr := g.Cpuemu.Memory[0x2000] & 0b00010000
+	if bgpatternaddr == 0b00010000{
+		raddr = 0
+	}
+	highbit, lowbit := Romdatareturn(g,raddr+uint64(oam.Spritenum*16))
 	arrayhead := (spritex*Pixlsize + spritey*256*Pixlsize)*4
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {

@@ -39,6 +39,8 @@ type CpuEmu struct {
 	DAMvalue uint8
 
 	// pad 
+	// 初期化用の変数
+	Padvalue uint16
 	BotmReadcount int
 	Abotmflag bool
 	Bbotmflag bool
@@ -61,6 +63,9 @@ type CpuEmu struct {
 	RegPc uint16
 	// Memory
 	Memory [memCap]uint8
+
+	// debug
+	Exeopcdlist []uint8
 }
 
 func (degemu *CpuEmu)Debug() {
@@ -88,11 +93,8 @@ func (degemu *CpuEmu)Debug() {
 	fmt.Printf("PC = 0x%x\n", degemu.RegPc)
 	fmt.Printf("opcd  = 0x%x\n",degemu.Memory[degemu.RegPc])
 	//fmt.Printf("Memory [0] = %d\n",degemu.Memory[0])
-	fmt.Printf("Memory [0x4] = 0x%x\n",degemu.Memory[0x4])
-	fmt.Printf("Memory [0x5] = 0x%x\n",degemu.Memory[0x5])
-	fmt.Printf("Memory [0x6] = 0x%x\n",degemu.Memory[0x6])
-	fmt.Printf("Memory [0x7] = 0x%x\n",degemu.Memory[0x7])
-	fmt.Printf("Memory [0x82] = 0x%x\n",degemu.Memory[0x82])
+	//fmt.Printf("Memory [0x0] = 0x%x\n",degemu.Memory[0x0])
+	//fmt.Printf("Memory [0x1] = 0x%x\n",degemu.Memory[0x1])
 }
 
 func initReg(fcEmu *CpuEmu) {
@@ -236,24 +238,6 @@ func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.DisplayY = 0
 	fcEmu.Displaywriteflag = false
 	fcEmu.DAMflag = false
-	/*
-	fcEmu.Memory[0x3f00] = 1
-	fcEmu.Memory[0x3f01] = 2
-	fcEmu.Memory[0x3f02] = 3
-	fcEmu.Memory[0x3f03] = 4
-	fcEmu.Memory[0x3f04] = 5
-	fcEmu.Memory[0x3f05] = 6
-	fcEmu.Memory[0x3f06] = 7
-	fcEmu.Memory[0x3f07] = 8
-	fcEmu.Memory[0x3f08] = 9
-	fcEmu.Memory[0x3f09] = 10
-	fcEmu.Memory[0x3f0a] = 11
-	fcEmu.Memory[0x3f0b] = 12
-	fcEmu.Memory[0x3f0c] = 13
-	fcEmu.Memory[0x3f0d] = 14
-	fcEmu.Memory[0x3f0e] = 15
-	fcEmu.Memory[0x3f0f] = 16
-	*/
 	chrrombuf := initMem(fcEmu)
 	return chrrombuf
 }
