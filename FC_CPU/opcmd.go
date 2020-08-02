@@ -262,6 +262,7 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 	// 0x2004 0x2003だったらoamへの
 	if pos == 0x2003 {
 		fcEmu.Oamnum = int(fcEmu.Regi[reg])
+		fcEmu.OamWritecount = 0
 	}
 	if pos == 0x2004 {
 		fcEmu.OamWriteFlag = true

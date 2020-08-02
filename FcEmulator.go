@@ -22,6 +22,7 @@ type Game struct {
 	usekey []ebiten.Key
 }
 
+
 func cpuexecute(g *Game){
 
 	// NMI割り込み
@@ -80,8 +81,10 @@ func cpuexecute(g *Game){
 		if cc == 4 {
 			g.Ppuemu.Oam[g.Cpuemu.Oamnum].X = g.Cpuemu.OamWriteValue
 		}
+
 	}
 
+	
 	if g.Cpuemu.DAMflag {
 		g.Cpuemu.DAMflag = false
 		var addr uint16 = uint16(g.Cpuemu.DAMvalue) * 16 * 16
@@ -116,14 +119,6 @@ func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 
 	var patternNum uint8
 	var palletnum uint8
-	var vblankflag bool = false
-	if numtile >=960{
-		vblankflag = true
-		g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
-		g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] + 0b10000000
-	} else {
-		g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
-	}
 	
 	//var palletnum uint8
 	// chrnumにはname tableから、bgまたはspriteの番号を取り出す。
@@ -143,17 +138,23 @@ func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 	for i :=0; i<8; i++ {
 
 		for k :=0; k < 8; k++ {
-			if vblankflag != true {
-				// pp : 書き込もうとしているピクセルのrcの場所の配列数宇
-				pp = tileheadaddr+k*4*Pixlsize+i*256*Pixlsize*4*Pixlsize
-				// N tile目のpattern number
-				patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
-				var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f00)
-				g.NoiseImage.Pix[pp] = rc
-				g.NoiseImage.Pix[pp+1] = gc
-				g.NoiseImage.Pix[pp+2] = bc
-				g.NoiseImage.Pix[pp+3] = 0xff
-			}
+
+			// pp : 書き込もうとしているピクセルのrcの場所の配列数宇
+			pp = tileheadaddr+k*4*Pixlsize+i*256*Pixlsize*4*Pixlsize
+			// N tile目のpattern number
+			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f00)
+			/*
+			g.NoiseImage.Pix[pp] = rc
+			g.NoiseImage.Pix[pp+1] = gc
+			g.NoiseImage.Pix[pp+2] = bc
+			g.NoiseImage.Pix[pp+3] = 0xff
+			*/
+			g.Cpuemu.Bufvram[pp] = rc
+			g.Cpuemu.Bufvram[pp+1] = gc
+			g.Cpuemu.Bufvram[pp+2] = bc
+			g.Cpuemu.Bufvram[pp+3] = 0xff
+			
 
 			/*
 			// ピクセルの大きさを上がるにはこの処理が必要。下記ソースはピクセルを2x2の大きさで一つのドットにするときに必要になる。
@@ -245,8 +246,8 @@ func (g *Game) Update(screen *ebiten.Image) error {
 
 	var vv int	
 	
-	for i :=0; i<35; i++ {
-
+	for i :=0; i<30; i++ {
+		/*
 		// 0sprite hit flag set 
 		// ほんらいはspriteの描画と同期させないといけないが軽量化のためにフラッグ処理は別にやる
 		var zerospriteYpos int = g.Ppuemu.Oam[0].Y / 8
@@ -261,16 +262,10 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		}else{
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
 		}
+		*/
 
 		for k :=0; k < 32; k++ {
 
-			
-			if i >= 27 {
-				//pp := (i-27)*32+k
-				//DrawSprite(g,pp)
-			}
-			
-			
 			// vv は n枚目のタイルの一番左上のピクセルの最初の配列番号
 			// k は一増えるごとに8pixl×ピクセル倍率分増える
 			// i は一増えるごとに256×ピクセル倍率に8pixl×ピクセル倍率を掛ける
@@ -281,18 +276,6 @@ func (g *Game) Update(screen *ebiten.Image) error {
 			numblock = Numblockreturn(i,k)
 			numtile = k+i*32
 			drawTile(g,vv,numblock,numtile)	
-			if k%5 == 0 && i%3 == 0 {
-				g.padread()
-				cpuexecute(g)
-				cpuexecute(g)
-				cpuexecute(g)
-				cpuexecute(g)
-				cpuexecute(g)
-				cpuexecute(g)
-				cpuexecute(g)
-				cpuexecute(g)
-				cp_mirrorvram(g)
-			}
 		}
 	}
 
@@ -301,6 +284,45 @@ func (g *Game) Update(screen *ebiten.Image) error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+
+
+	for v :=0 ; v < 260 ; v++ {
+		// vblanck
+		if v > 240 {
+			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
+			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] + 0b10000000
+		} else {
+			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
+		}
+
+		// 0 bom
+		if (g.Ppuemu.Oam[0].Y+3) == v {
+			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
+			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] + 0b01000000
+		}else{
+			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
+		}
+
+		for i := 0 ; i < 256 ; i++ {
+			// 0startだから239まで
+			if v <= 239 {
+				vv := i + v*256
+				g.NoiseImage.Pix[vv*4] = g.Cpuemu.Bufvram[vv*4]
+				g.NoiseImage.Pix[vv*4+1] = g.Cpuemu.Bufvram[vv*4+1]
+				g.NoiseImage.Pix[vv*4+2] = g.Cpuemu.Bufvram[vv*4+2]
+				g.NoiseImage.Pix[vv*4+3] = g.Cpuemu.Bufvram[vv*4+3]
+			}
+		}
+		for q := 0 ; q < 114 ; q++ {
+			if q%20 == 0 {
+				//g.padread()
+			}
+			cpuexecute(g)
+		}
+	}
+	for i := 0 ; i < 256 ; i++ {
+		DrawSprite(g,i)
+	}
 	screen.ReplacePixels(g.NoiseImage.Pix)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
 }
@@ -333,6 +355,7 @@ func main(){
 	chrrombuf := FC_CPU.InitEmu(&cpuEmu)
 	Initppuemu(&ppuEmu, chrrombuf)
 
+
 	g := &Game{
 		NoiseImage: image.NewRGBA(image.Rect(0, 0, ScreenWidth, ScreenHeight)),
 		Ppuemu: &ppuEmu,
@@ -349,8 +372,7 @@ func main(){
 	for _, e := range g.Cpuemu.Exeopcdlist{
 		fmt.Printf("opcd : 0x%x\n",e)
 	}
-	*/	
-
+	*/
 
 
 }

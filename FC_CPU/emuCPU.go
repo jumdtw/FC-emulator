@@ -64,8 +64,14 @@ type CpuEmu struct {
 	// Memory
 	Memory [memCap]uint8
 
+	// 内部情報
+	UpdateX int
+	UpdateY int
+	Bufvram [256*240*4]uint8
+
 	// debug
 	Exeopcdlist []uint8
+	
 }
 
 func (degemu *CpuEmu)Debug() {
