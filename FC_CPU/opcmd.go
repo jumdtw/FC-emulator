@@ -28,8 +28,8 @@ const (
 	LDXZEROY = 0xb6
 	// LDXABS :
 	LDXABS = 0xae
-	// LDXABSX :
-	LDXABSX = 0xbe
+	// LDXABSY :
+	LDXABSY = 0xbe
 
 	// LDYIMM:
 	LDYIMM = 0xa0
@@ -171,10 +171,14 @@ const (
 
 	// ANDIMM : 
 	ANDIMM = 0x29
+	// ANDZERO : 
+	ANDZERO = 0x25
 	// ANDABS : 
 	ANDABS = 0x2d
 	// ANDABSX : 
 	ANDABSX = 0x3d
+	// ANDABSY : 
+	ANDABSY = 0x39
 
 	// ASLIMM :
 	ASLIMM = 0x0a
@@ -1295,6 +1299,13 @@ func (fcEmu *CpuEmu) andImm(){
 	zflagset(fcEmu, fcEmu.Regi["A"])
 	fcEmu.RegPc++
 }
+func (fcEmu *CpuEmu) andZero(){
+	var pos uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] & fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	fcEmu.RegPc = fcEmu.RegPc + 1
+}
 func (fcEmu *CpuEmu) andAbs(){
 	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
@@ -1309,6 +1320,16 @@ func (fcEmu *CpuEmu) andAbsX(){
 	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
 	var xreg uint16 = uint16(fcEmu.Regi["X"])
 	var pos uint16 = (absposhigh << 8) + absposlow + xreg
+	fcEmu.Regi["A"] = fcEmu.Memory[pos] & fcEmu.Regi["A"]
+	nflagset(fcEmu, fcEmu.Regi["A"])
+	zflagset(fcEmu, fcEmu.Regi["A"])
+	fcEmu.RegPc = fcEmu.RegPc + 2
+}
+func (fcEmu *CpuEmu) andAbsY(){
+	var absposhigh uint16 = uint16(fcEmu.Memory[fcEmu.RegPc+1])
+	var absposlow uint16 = uint16(fcEmu.Memory[fcEmu.RegPc])
+	var yreg uint16 = uint16(fcEmu.Regi["Y"])
+	var pos uint16 = (absposhigh << 8) + absposlow + yreg
 	fcEmu.Regi["A"] = fcEmu.Memory[pos] & fcEmu.Regi["A"]
 	nflagset(fcEmu, fcEmu.Regi["A"])
 	zflagset(fcEmu, fcEmu.Regi["A"])
@@ -1681,7 +1702,7 @@ func (fcEmu *CpuEmu) Execute() int {
 		fcEmu.ldxZeroY()
 	case LDXABS:
 		fcEmu.ldxAbs()
-	case LDXABSX:
+	case LDXABSY:
 		fcEmu.ldxAbsY()
 	// ldy
 	case LDYIMM:
@@ -1830,10 +1851,14 @@ func (fcEmu *CpuEmu) Execute() int {
 	// and
 	case ANDIMM:
 		fcEmu.andImm()
+	case ANDZERO:
+		fcEmu.andZero()	
 	case ANDABS:
 		fcEmu.andAbs()	
 	case ANDABSX:
-		fcEmu.andAbsX()	
+		fcEmu.andAbsX()
+	case ANDABSY:
+		fcEmu.andAbsY()	
 	// asl
 	case ASLIMM:
 		fcEmu.aslImm()	

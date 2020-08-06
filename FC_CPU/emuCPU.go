@@ -71,6 +71,7 @@ type CpuEmu struct {
 
 	// debug
 	Exeopcdlist []uint8
+	Saveflag bool
 	
 }
 
@@ -244,6 +245,7 @@ func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.DisplayY = 0
 	fcEmu.Displaywriteflag = false
 	fcEmu.DAMflag = false
+	fcEmu.Saveflag = false
 	chrrombuf := initMem(fcEmu)
 	return chrrombuf
 }

@@ -55,10 +55,19 @@ func cpuexecute(g *Game){
 		g.Cpuemu.RegPc = g.Cpuemu.Nmiaddr
 	}
 
+	if g.Cpuemu.RegPc == 0x8057 {
+		g.Cpuemu.Saveflag = true
+	}
+
 	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
-	//g.Cpuemu.Debug()
+	if g.Cpuemu.Saveflag {
+		g.Cpuemu.Debug()
+	}
 	g.Cpuemu.Execute()
-	//fmt.Println("----------------------------------\n")
+	if g.Cpuemu.Saveflag {
+		fmt.Println("----------------------------------\n")
+	}
+	
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
@@ -368,11 +377,10 @@ func main(){
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}  
+	
 	/*
 	for _, e := range g.Cpuemu.Exeopcdlist{
 		fmt.Printf("opcd : 0x%x\n",e)
 	}
 	*/
-
-
 }
