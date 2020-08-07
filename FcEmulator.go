@@ -61,11 +61,11 @@ func cpuexecute(g *Game){
 
 	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
 	if g.Cpuemu.Saveflag {
-		g.Cpuemu.Debug()
+		//g.Cpuemu.Debug()
 	}
 	g.Cpuemu.Execute()
 	if g.Cpuemu.Saveflag {
-		fmt.Println("----------------------------------\n")
+		//fmt.Println("----------------------------------\n")
 	}
 	
 	
