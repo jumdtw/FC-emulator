@@ -121,6 +121,10 @@ func cp_mirrorvram(g *Game){
 			g.Ppuemu.Memory[0x2c00+i] = g.Ppuemu.Memory[0x2800+i]
 		}
 	}
+	// ram mirror
+	for i:=0; i<(0x1fff-0x800) ; i++{
+		g.Ppuemu.Memory[0x800+i] = g.Ppuemu.Memory[0x200+i]
+	}
 }
 
 func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){

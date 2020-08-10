@@ -82,6 +82,7 @@ func (degemu *CpuEmu)Debug() {
 		fmt.Print("Regi", value, " = ")
 		fmt.Printf("0x%x\n", degemu.Regi[value])
 	}
+	/*
 	fmt.Println("--stack--")
 	// 現在のSPは空っぽのやつ
 	bufsp := degemu.Regi["S"]
@@ -95,6 +96,7 @@ func (degemu *CpuEmu)Debug() {
 	}
 	fmt.Printf("0x%x : value 0x%x \n",0x1ff,degemu.Memory[0x1ff])
 	fmt.Println("---------")
+	*/
 	fmt.Printf("N. V. R. B. D. I. Z. C\n")
 	fmt.Printf("RegiP = 0b%08b\n",degemu.Regi["P"])
 	fmt.Printf("PC = 0x%x\n", degemu.RegPc)
@@ -148,7 +150,7 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\chickenrace2.nes`)
 	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\amegure.nes`)
-
+	//file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\nestest.nes`)
 	if err != nil {
 		panic("file error")
 	}
@@ -212,7 +214,6 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.Irqaddr = irqaddr
 	fcEmu.Nmiaddr = nmiaddr
 	fcEmu.Resetaddr = resetaddr
-	
 	bufcounter := 0
 	for chrcounter >= 0 {
 		n, writeerr := file.Read(writebuf)
