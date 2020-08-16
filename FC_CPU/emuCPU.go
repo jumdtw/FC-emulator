@@ -98,7 +98,7 @@ func (degemu *CpuEmu)Debug() {
 	fmt.Println("---------")
 	*/
 	fmt.Printf("N. V. R. B. D. I. Z. C\n")
-	fmt.Printf("RegiP = 0b%08b\n",degemu.Regi["P"])
+	fmt.Printf("RegiP = 0b%08b, 0x%x\n",degemu.Regi["P"],degemu.Regi["P"])
 	fmt.Printf("PC = 0x%x\n", degemu.RegPc)
 	fmt.Printf("opcd  = 0x%x\n",degemu.Memory[degemu.RegPc])
 	//fmt.Printf("Memory [0] = %d\n",degemu.Memory[0])
@@ -111,13 +111,14 @@ func initReg(fcEmu *CpuEmu) {
 	fcEmu.Regi["A"] = 0
 	fcEmu.Regi["X"] = 0
 	fcEmu.Regi["Y"] = 0
-	fcEmu.Regi["S"] = 0xff
-	fcEmu.Regi["P"] = 0b00100000
+	fcEmu.Regi["S"] = 0xfd
+	fcEmu.Regi["P"] = 0b00100100
 	fcEmu.InterruptFlag = false
 }
 
 func initPc(fcEmu *CpuEmu,resetaddr uint16) {
 	fcEmu.RegPc = resetaddr
+	fcEmu.RegPc = 0xc000
 }
 
 func checkNes(checkbuf []uint8) (uint8, uint8, int) {
@@ -148,9 +149,9 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 	var progSize, chrSize uint8 = 0, 0
 	bufRegpc := 0x8000
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\chickenrace2.nes`)
-	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
+	//file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\amegure.nes`)
-	//file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\nestest.nes`)
+	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\nestest.nes`)
 	if err != nil {
 		panic("file error")
 	}
@@ -206,10 +207,17 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 		}
 		// nes file の pro 部分を 0x8000 から 16384*progSize 分読み込む
 		fcEmu.Memory[bufRegpc] = writebuf[0]
-		//fmt.Printf("rom: 0x%x\n",fcEmu.Memory[bufRegpc])
 		bufRegpc++
 		progcounter--
 	}
+
+	if progSize == 1 {
+		for i:=0 ; i < 0x4000 ; i++ {
+			fcEmu.Memory[0xc000+i] = fcEmu.Memory[0x8000+i]
+		}
+	}
+
+	
 
 	fcEmu.Irqaddr = irqaddr
 	fcEmu.Nmiaddr = nmiaddr

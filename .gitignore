@@ -2,5 +2,6 @@ test.go
 *.nes
 example/
 *.exe
-memo.txt
+*.txt
+*.log
 rom

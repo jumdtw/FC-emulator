@@ -55,17 +55,19 @@ func cpuexecute(g *Game){
 		g.Cpuemu.RegPc = g.Cpuemu.Nmiaddr
 	}
 
+	/*
 	if g.Cpuemu.RegPc == 0x8057 {
 		g.Cpuemu.Saveflag = true
 	}
-
+	*/
 	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
 	if g.Cpuemu.Saveflag {
-		//g.Cpuemu.Debug()
+		g.Cpuemu.Debug()
 	}
 	g.Cpuemu.Execute()
+	fmt.Printf("PC : 0x%x, A : 0x%x, X : 0x%x, Y : 0x%x, P : 0x%x, SP : 0x%x",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
 	if g.Cpuemu.Saveflag {
-		//fmt.Println("----------------------------------\n")
+		fmt.Println("----------------------------------\n")
 	}
 	
 	
@@ -123,7 +125,7 @@ func cp_mirrorvram(g *Game){
 	}
 	// ram mirror
 	for i:=0; i<(0x1fff-0x800) ; i++{
-		g.Ppuemu.Memory[0x800+i] = g.Ppuemu.Memory[0x200+i]
+		g.Cpuemu.Memory[0x800+i] = g.Cpuemu.Memory[0x200+i]
 	}
 }
 
@@ -297,8 +299,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-
-
+	
 	for v :=0 ; v < 260 ; v++ {
 		// vblanck
 		if v > 240 {
@@ -333,6 +334,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			cpuexecute(g)
 		}
 	}
+	cp_mirrorvram(g)
 	for i := 0 ; i < 256 ; i++ {
 		DrawSprite(g,i)
 	}
@@ -380,7 +382,9 @@ func main(){
 
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
-	}  
+	}
+
+	fmt.Printf("adfakjd : 0b%08b\n",g.Cpuemu.Memory[0x2000])
 	
 	/*
 	for _, e := range g.Cpuemu.Exeopcdlist{
