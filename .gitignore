@@ -5,3 +5,6 @@ example/
 *.txt
 *.log
 rom
+*.py
+qqq
+*.bat
