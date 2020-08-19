@@ -383,8 +383,6 @@ func main(){
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf("adfakjd : 0b%08b\n",g.Cpuemu.Memory[0x2000])
 	
 	/*
 	for _, e := range g.Cpuemu.Exeopcdlist{
