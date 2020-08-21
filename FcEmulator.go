@@ -64,7 +64,7 @@ func cpuexecute(g *Game){
 	if g.Cpuemu.Saveflag {
 		g.Cpuemu.Debug()
 	}
-	fmt.Printf("PC : 0x%x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
+	fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
 	g.Cpuemu.Execute()
 	if g.Cpuemu.Saveflag {
 		fmt.Println("----------------------------------\n")
