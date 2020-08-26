@@ -25,51 +25,16 @@ type Game struct {
 
 func cpuexecute(g *Game){
 
-	// NMI割り込み
-	// 多分本来のハードウェア動作だと次にこの動作処理が来るまでにCPU側で処理が終わっている。
-	// でもこのエミュレータだと実質同期処理しているような状態なので処理が終わる前に再び
-	// nmiaddrで割り込みが入ってしまう。そのため割り込み処理が終わるまでフラッグで判断して処理する。
-	nmiflag := g.Cpuemu.Memory[0x2000] & 0b10000000
-	vblankflag := g.Cpuemu.Memory[0x2002] & 0b10000000
-	if nmiflag == 0b10000000 && g.Cpuemu.InterruptFlag == false && vblankflag == 0b10000000 {
-		// ステータスレジスタの変化
-		g.Cpuemu.Regi["P"] = g.Cpuemu.Regi["P"] & 0b11101011
-		g.Cpuemu.Regi["P"] = g.Cpuemu.Regi["P"] + 0b00010100
-
-		// 割り込みフラッグ　割り込み中はtrue
-		// 割り込み処理に入ったのでtrueにする
-		g.Cpuemu.InterruptFlag = true
-
-		// スタックに現在のPCを積む
-		var sppos uint16 = 0x0100 + uint16(g.Cpuemu.Regi["S"])
-		// 0x4050 だったら　50 40 の順でスタックに積む。個々の動作は等で確認が取れていないためこのエミュレータだけの可能性あり。
-		lowaddr := g.Cpuemu.RegPc & 0x00ff
-		highaddr := g.Cpuemu.RegPc & 0xff00
-		highaddr = highaddr >> 8
-		g.Cpuemu.Memory[sppos-2] = g.Cpuemu.Regi["P"]
-		g.Cpuemu.Memory[sppos-1] = uint8(lowaddr)
-		g.Cpuemu.Memory[sppos] = uint8(highaddr)
-		g.Cpuemu.Regi["S"] = g.Cpuemu.Regi["S"] - 3
-
-		// 割り込みアドレスの代入
-		g.Cpuemu.RegPc = g.Cpuemu.Nmiaddr
-	}
-
 	/*
-	if g.Cpuemu.RegPc == 0x8057 {
-		g.Cpuemu.Saveflag = true
+	if g.Cpuemu.RegPc >= 0xc5dc && g.Cpuemu.RegPc <= 0xc5f0 {
+		fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
 	}
 	*/
+	
 	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
-	if g.Cpuemu.Saveflag {
-		g.Cpuemu.Debug()
-	}
 	fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
 	g.Cpuemu.Execute()
-	if g.Cpuemu.Saveflag {
-		fmt.Println("----------------------------------\n")
-	}
-	
+
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
@@ -210,11 +175,11 @@ func (g *Game) padread(){
 		if p == g.usekey[1] {
 			g.Cpuemu.Bbotmflag = true
 		}
-		// Select
+		// Select q key
 		if p == g.usekey[2] {
 			g.Cpuemu.Selectbotmflag = true
 		}
-		// Start
+		// Start w key
 		if p == g.usekey[3] {
 			g.Cpuemu.Startbotmflag = true
 		} 
@@ -262,22 +227,6 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	var vv int	
 	
 	for i :=0; i<30; i++ {
-		/*
-		// 0sprite hit flag set 
-		// ほんらいはspriteの描画と同期させないといけないが軽量化のためにフラッグ処理は別にやる
-		var zerospriteYpos int = g.Ppuemu.Oam[0].Y / 8
-		var	nowpixcelunder int = i*8
-		var	nowpixceltop int = (i-1)*8
-		if nowpixceltop < 0 {
-			nowpixceltop = 0
-		}
-		if nowpixceltop <= zerospriteYpos && nowpixcelunder >= zerospriteYpos {
-			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
-			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] + 0b01000000
-		}else{
-			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
-		}
-		*/
 
 		for k :=0; k < 32; k++ {
 
@@ -298,9 +247,42 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	return nil
 }
 
+func (g *Game) vblanckInterrupt() {
+	// NMI割り込み
+	// 多分本来のハードウェア動作だと次にこの動作処理が来るまでにCPU側で処理が終わっている。
+	// でもこのエミュレータだと実質同期処理しているような状態なので処理が終わる前に再び
+	// nmiaddrで割り込みが入ってしまう。そのため割り込み処理が終わるまでフラッグで判断して処理する。
+	nmiflag := g.Cpuemu.Memory[0x2000] & 0b10000000
+	vblankflag := g.Cpuemu.Memory[0x2002] & 0b10000000
+	if nmiflag == 0b10000000 && g.Cpuemu.InterruptFlag == false && vblankflag == 0b10000000 {
+		// ステータスレジスタの変化
+		g.Cpuemu.Regi["P"] = g.Cpuemu.Regi["P"] & 0b11101011
+		g.Cpuemu.Regi["P"] = g.Cpuemu.Regi["P"] + 0b00010100
+
+		// 割り込みフラッグ　割り込み中はtrue
+		// 割り込み処理に入ったのでtrueにする
+		g.Cpuemu.InterruptFlag = true
+
+		// スタックに現在のPCを積む
+		var sppos uint16 = 0x0100 + uint16(g.Cpuemu.Regi["S"])
+		// 0x4050 だったら　50 40 の順でスタックに積む。個々の動作は等で確認が取れていないためこのエミュレータだけの可能性あり。
+		lowaddr := g.Cpuemu.RegPc & 0x00ff
+		highaddr := g.Cpuemu.RegPc & 0xff00
+		highaddr = highaddr >> 8
+		g.Cpuemu.Memory[sppos-2] = g.Cpuemu.Regi["P"]
+		g.Cpuemu.Memory[sppos-1] = uint8(lowaddr)
+		g.Cpuemu.Memory[sppos] = uint8(highaddr)
+		g.Cpuemu.Regi["S"] = g.Cpuemu.Regi["S"] - 3
+
+		// 割り込みアドレスの代入
+		g.Cpuemu.RegPc = g.Cpuemu.Nmiaddr
+	}
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	
 	for v :=0 ; v < 260 ; v++ {
+		
 		// vblanck
 		if v > 240 {
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
@@ -308,7 +290,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		} else {
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
 		}
-
+		if v==241 {
+			g.vblanckInterrupt()
+		}
+		
+		
 		// 0 bom
 		if (g.Ppuemu.Oam[0].Y+3) == v {
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
@@ -316,6 +302,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}else{
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
 		}
+		
 
 		for i := 0 ; i < 256 ; i++ {
 			// 0startだから239まで
@@ -329,7 +316,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		for q := 0 ; q < 114 ; q++ {
 			if q%20 == 0 {
-				//g.padread()
+				g.padread()
 			}
 			cpuexecute(g)
 		}
@@ -383,6 +370,8 @@ func main(){
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
+
+	//fmt.Printf("0x2000 : 0b%08b\n",g.Cpuemu.Memory[0x2000])
 	
 	/*
 	for _, e := range g.Cpuemu.Exeopcdlist{
