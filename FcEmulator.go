@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"log"
+	//"os"
 	//"reflect"
 
 	"github.com/hajimehoshi/ebiten"
@@ -25,19 +26,21 @@ type Game struct {
 
 func cpuexecute(g *Game){
 
-	/*
-	if g.Cpuemu.RegPc >= 0xc5dc && g.Cpuemu.RegPc <= 0xc5f0 {
-		fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
-	}
-	*/
+	
 	
 	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
-	fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
+	//fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
 	g.Cpuemu.Execute()
 
+	if g.Cpuemu.VramReadFlag {
+		g.Cpuemu.Regi[g.Cpuemu.VramReadReg] = g.Ppuemu.Memory[g.Cpuemu.VramAddr]
+		g.Cpuemu.VramAddr++
+		g.Cpuemu.VramReadFlag = false
+	}
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
+		//fmt.Printf("PC : 0x%x, vram write : 0x%x, ppumemory : 0x%x\n", g.Cpuemu.RegPc ,g.Cpuemu.VramWriteValue,g.Cpuemu.VramAddr)
 		g.Cpuemu.VramAddr++
 		g.Cpuemu.VramWriteFlag = false
 	}
@@ -64,11 +67,11 @@ func cpuexecute(g *Game){
 	if g.Cpuemu.DAMflag {
 		g.Cpuemu.DAMflag = false
 		var addr uint16 = uint16(g.Cpuemu.DAMvalue) * 16 * 16
-		for v := 0 ; v < 0x100 ; v++ {
-			g.Ppuemu.Oam[v].Y = int(g.Cpuemu.Memory[addr + uint16(v)])
-			g.Ppuemu.Oam[v].Spritenum = int(g.Cpuemu.Memory[addr + uint16(v) + 1])
-			g.Ppuemu.Oam[v].Sflag = g.Cpuemu.Memory[addr + uint16(v) + 2]
-			g.Ppuemu.Oam[v].X = int(g.Cpuemu.Memory[addr + uint16(v) + 3])
+		for v := 0 ; v < 256 ; v+=4 {
+			g.Ppuemu.Oam[v/4].Y = int(g.Cpuemu.Memory[addr + uint16(v)])
+			g.Ppuemu.Oam[v/4].Spritenum = int(g.Cpuemu.Memory[addr + uint16(v) + 1])
+			g.Ppuemu.Oam[v/4].Sflag = g.Cpuemu.Memory[addr + uint16(v) + 2]
+			g.Ppuemu.Oam[v/4].X = int(g.Cpuemu.Memory[addr + uint16(v) + 3])
 		}
 	}
 
@@ -284,7 +287,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for v :=0 ; v < 260 ; v++ {
 		
 		// vblanck
-		if v > 240 {
+		if v > 240 && v < 250 {
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b01111111
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] + 0b10000000
 		} else {
@@ -316,13 +319,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		for q := 0 ; q < 114 ; q++ {
 			if q%20 == 0 {
-				g.padread()
+				//g.padread()
 			}
 			cpuexecute(g)
+
 		}
 	}
 	cp_mirrorvram(g)
-	for i := 0 ; i < 256 ; i++ {
+	for i := 0 ; i < 64 ; i++ {
 		DrawSprite(g,i)
 	}
 	screen.ReplacePixels(g.NoiseImage.Pix)

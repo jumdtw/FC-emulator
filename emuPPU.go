@@ -35,7 +35,7 @@ type Ppu struct {
 	// 0x3f00 ~ 0x3f0f : BG palette  4 color * 4 palette 
 	// 0x3f10 ~ 0x3f1f : sprite palette 4 color * 4 palette
 	Memory [memCap]uint8
-	Oam [256]Sprite 
+	Oam [64]Sprite 
 }
 
 
@@ -461,5 +461,10 @@ func Initppuemu(Ppuemu *Ppu,chrrombuf []uint8){
 	}
 	for i:=0 ;i<0xfff; i++{
 		Ppuemu.Memory[0x1000+i] = chrrombuf[0x1000+i]
+	}
+	for i:=0 ;i<64; i++{
+		Ppuemu.Oam[i].X = 0x100
+		Ppuemu.Oam[i].Y = 0x100
+		Ppuemu.Oam[i].Spritenum = 0x100
 	}
 }

@@ -519,6 +519,14 @@ func addrIndY(fcEmu *CpuEmu)(uint16){
 }
 
 func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
+
+	if  pos ==  0x300{
+		//fmt.Printf("reg : %s, 300PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",reg ,fcEmu.RegPc, fcEmu.Regi["A"], fcEmu.Regi["X"], fcEmu.Regi["Y"], fcEmu.Regi["P"], fcEmu.Regi["S"])
+	}
+	if pos == 0x301{
+		//fmt.Printf("reg : %s, 301PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",reg ,fcEmu.RegPc, fcEmu.Regi["A"], fcEmu.Regi["X"], fcEmu.Regi["Y"], fcEmu.Regi["P"], fcEmu.Regi["S"])
+	}
+	
 	
 	//fmt.Printf("now sta pos : 0x%x, memoryvalue : 0x%x\n",pos,fcEmu.Memory[pos])
 
@@ -526,14 +534,12 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 	if pos == 0x2006 {
 		fcEmu.VramAddr = fcEmu.VramAddr << 8
 		fcEmu.VramAddr += uint16(fcEmu.Regi[reg])
-		//fmt.Printf("change vram pos : 0x%x !!!!!!!!!!!!!!!!!!\n",fcEmu.Regi[reg])
+		//fmt.Printf("change vram pos : 0x%x , PC : 0x%x\n",fcEmu.Regi[reg],fcEmu.RegPc)
 	}
 	if pos == 0x2007 {
 		fcEmu.VramWriteFlag = true
 		fcEmu.VramWriteValue = fcEmu.Regi[reg]
-		//fmt.Printf("PC : 0x%x, regx : 0x%x, regy : 0x%x, vram write : 0x%x\n", fcEmu.RegPc-1 ,fcEmu.Regi["X"] ,fcEmu.Regi["Y"] ,fcEmu.Regi[reg])
-	}else {
-		fcEmu.VramWriteFlag = false
+		//fmt.Printf("PC : 0x%x, vram write : 0x%x\n", fcEmu.RegPc ,fcEmu.Regi[reg])
 	}
 	// 0x2004 0x2003だったらoamへの
 	if pos == 0x2003 {
@@ -545,7 +551,7 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 		fcEmu.OamWriteValue = int(fcEmu.Regi[reg])
 		if fcEmu.OamWritecount == 4{
 			fcEmu.Oamnum++
-			if fcEmu.Oamnum >= 255{
+			if fcEmu.Oamnum >= 64{
 				fcEmu.Oamnum = 0
 			}
 			fcEmu.OamWritecount = 0
@@ -554,7 +560,7 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 	}
 
 	if pos == 0x2002{
-		fcEmu.VramAddr = 0
+		//fcEmu.VramAddr = 0
 		//fmt.Println("reset scroll")
 	}
 
@@ -585,7 +591,8 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 	}
 }
 
-func padread(fcEmu *CpuEmu, pos uint16){
+func padread(fcEmu *CpuEmu, pos uint16, reg string){
+
 	//fmt.Printf("pad read : 0x%x\n",pos)
 	// 0x4016 はパッドの読み込み
 	if pos == 0x4016 {
@@ -651,6 +658,11 @@ func padread(fcEmu *CpuEmu, pos uint16){
 		}
 	}else{
 		fcEmu.BotmReadcount = 0
+	}
+
+	if pos == 0x2007 {
+		fcEmu.VramReadFlag = true
+		fcEmu.VramReadReg = reg
 	}
 }
 
@@ -757,24 +769,24 @@ func cflagset(fcEmu *CpuEmu,x uint16){
 
 // LDA
 func (fcEmu *CpuEmu) lda(pos uint16) {
-	padread(fcEmu,pos)
+	padread(fcEmu,pos,"A")
 	fcEmu.Regi["A"] = fcEmu.Memory[pos]
-	if fcEmu.RegPc == 0xc08b {
-		//fmt.Printf("0x%x\n",fcEmu.Memory[pos])
+	if fcEmu.RegPc == 0x8ee4 {
+		//fmt.Printf("read   A : 0x%02x, X : 0x%02x, Y : 0x%02x, pos : 0x%02x\n",fcEmu.Regi["A"], fcEmu.Regi["X"], fcEmu.Regi["Y"], pos)
 	}
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])
 }
 // LDX
 func (fcEmu *CpuEmu) ldx(pos uint16) {
-	padread(fcEmu,pos)
+	padread(fcEmu,pos,"X")
 	fcEmu.Regi["X"] = fcEmu.Memory[pos]
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])
 }
 // LDY
 func (fcEmu *CpuEmu) ldy(pos uint16) {
-	padread(fcEmu,pos)
+	padread(fcEmu,pos,"Y")
 	fcEmu.Regi["Y"] = fcEmu.Memory[pos]
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])

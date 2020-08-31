@@ -27,8 +27,12 @@ type CpuEmu struct {
 	VramAddr uint16
 	// vram write flag
 	VramWriteFlag bool
+	// vram read flag
+	VramReadFlag bool
+	VramReadReg string
 	// vram write value
 	VramWriteValue uint8
+
 
 	// oamへの書き込みフラッグ
 	Oamnum int
@@ -111,14 +115,14 @@ func initReg(fcEmu *CpuEmu) {
 	fcEmu.Regi["A"] = 0
 	fcEmu.Regi["X"] = 0
 	fcEmu.Regi["Y"] = 0
-	fcEmu.Regi["S"] = 0xfd
+	fcEmu.Regi["S"] = 0xff
 	fcEmu.Regi["P"] = 0b00100100
 	fcEmu.InterruptFlag = false
 }
 
 func initPc(fcEmu *CpuEmu,resetaddr uint16) {
 	fcEmu.RegPc = resetaddr
-	fcEmu.RegPc = 0xc000
+	//fcEmu.RegPc = 0xc000
 }
 
 func checkNes(checkbuf []uint8) (uint8, uint8, int) {
@@ -149,9 +153,9 @@ func readFile(fcEmu *CpuEmu) ([]uint8) {
 	var progSize, chrSize uint8 = 0, 0
 	bufRegpc := 0x8000
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\chickenrace2.nes`)
-	//file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
+	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\mario.nes`)
 	//file, err := os.Open(`C:\Users\ttnmr\go\src\github.com\jumdtw\FC-emulator\amegure.nes`)
-	file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\nestest.nes`)
+	//file, err := os.Open(`C:\Users\ttnmr\OneDrive\デスクトップ\software\nestest.nes`)
 	if err != nil {
 		panic("file error")
 	}
@@ -255,7 +259,9 @@ func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.Displaywriteflag = false
 	fcEmu.DAMflag = false
 	fcEmu.Saveflag = false
+	fcEmu.VramReadFlag = false
 	chrrombuf := initMem(fcEmu)
+	fcEmu.Memory[0x2002] = 0x10
 	return chrrombuf
 }
 
