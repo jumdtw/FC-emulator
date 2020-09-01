@@ -431,7 +431,7 @@ func DrawSprite(g *Game, pp int){
 	oam := g.Ppuemu.Oam[pp]
 	palletnum = oam.Sflag & 0b00000011
 	spritex := oam.X
-	spritey := oam.Y + 3
+	spritey := oam.Y
 	// selectspritecartridge
 	var raddr uint64 = 0x1000
 	bgpatternaddr := g.Cpuemu.Memory[0x2000] & 0b00010000
@@ -445,7 +445,7 @@ func DrawSprite(g *Game, pp int){
 			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
 			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
 			pp := arrayhead + (k+i*256)*4
-			if pp < 256*240*4 {
+			if pp < 256*240*4 && patternNum != 0{
 				g.NoiseImage.Pix[pp] = rc
 				g.NoiseImage.Pix[pp+1] = gc
 				g.NoiseImage.Pix[pp+2] = bc

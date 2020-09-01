@@ -518,18 +518,8 @@ func addrIndY(fcEmu *CpuEmu)(uint16){
 	return pos
 }
 
-func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
-
-	if  pos ==  0x300{
-		//fmt.Printf("reg : %s, 300PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",reg ,fcEmu.RegPc, fcEmu.Regi["A"], fcEmu.Regi["X"], fcEmu.Regi["Y"], fcEmu.Regi["P"], fcEmu.Regi["S"])
-	}
-	if pos == 0x301{
-		//fmt.Printf("reg : %s, 301PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",reg ,fcEmu.RegPc, fcEmu.Regi["A"], fcEmu.Regi["X"], fcEmu.Regi["Y"], fcEmu.Regi["P"], fcEmu.Regi["S"])
-	}
+func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){	
 	
-	
-	//fmt.Printf("now sta pos : 0x%x, memoryvalue : 0x%x\n",pos,fcEmu.Memory[pos])
-
 	// 0x2006だったらppuへのアクセス
 	if pos == 0x2006 {
 		fcEmu.VramAddr = fcEmu.VramAddr << 8
@@ -660,6 +650,12 @@ func padread(fcEmu *CpuEmu, pos uint16, reg string){
 		fcEmu.BotmReadcount = 0
 	}
 
+	if pos == 0x2002{
+		fcEmu.VramAddr = 0
+		fcEmu.DisplayX = 0
+		fcEmu.DisplayY = 0
+	}
+
 	if pos == 0x2007 {
 		fcEmu.VramReadFlag = true
 		fcEmu.VramReadReg = reg
@@ -771,9 +767,6 @@ func cflagset(fcEmu *CpuEmu,x uint16){
 func (fcEmu *CpuEmu) lda(pos uint16) {
 	padread(fcEmu,pos,"A")
 	fcEmu.Regi["A"] = fcEmu.Memory[pos]
-	if fcEmu.RegPc == 0x8ee4 {
-		//fmt.Printf("read   A : 0x%02x, X : 0x%02x, Y : 0x%02x, pos : 0x%02x\n",fcEmu.Regi["A"], fcEmu.Regi["X"], fcEmu.Regi["Y"], pos)
-	}
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])
 }

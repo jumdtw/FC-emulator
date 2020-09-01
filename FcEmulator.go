@@ -26,22 +26,29 @@ type Game struct {
 
 func cpuexecute(g *Game){
 
+	var incppu uint8
 	
-	
-	//fmt.Printf("PC : 0x%x\n",g.Cpuemu.RegPc)
-	//fmt.Printf("PC : 0x%04x, A : 0x%02x, X : 0x%02x, Y : 0x%02x, P : 0x%02x, SP : 0x%02x\n",g.Cpuemu.RegPc, g.Cpuemu.Regi["A"], g.Cpuemu.Regi["X"], g.Cpuemu.Regi["Y"], g.Cpuemu.Regi["P"], g.Cpuemu.Regi["S"])
 	g.Cpuemu.Execute()
+
+	incppu = g.Cpuemu.Memory[0x2000] & 0x04
 
 	if g.Cpuemu.VramReadFlag {
 		g.Cpuemu.Regi[g.Cpuemu.VramReadReg] = g.Ppuemu.Memory[g.Cpuemu.VramAddr]
-		g.Cpuemu.VramAddr++
+		if incppu == 0x04 {
+			g.Cpuemu.VramAddr+=32
+		} else {
+			g.Cpuemu.VramAddr++
+		}
 		g.Cpuemu.VramReadFlag = false
 	}
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
-		//fmt.Printf("PC : 0x%x, vram write : 0x%x, ppumemory : 0x%x\n", g.Cpuemu.RegPc ,g.Cpuemu.VramWriteValue,g.Cpuemu.VramAddr)
-		g.Cpuemu.VramAddr++
+		if incppu == 0x04 {
+			g.Cpuemu.VramAddr+=32
+		} else {
+			g.Cpuemu.VramAddr++
+		}
 		g.Cpuemu.VramWriteFlag = false
 	}
 
@@ -299,7 +306,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		
 		
 		// 0 bom
-		if (g.Ppuemu.Oam[0].Y+3) == v {
+		if (g.Ppuemu.Oam[0].Y) == v {
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] + 0b01000000
 		}else{
