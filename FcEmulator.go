@@ -28,23 +28,36 @@ func cpuexecute(g *Game){
 
 	var incppu uint8
 	
+	//PC : 0x800d, A : 0x10, X : 0xff, Y : 0x00, P : 0x24, SP : 0xff
+	//fmt.Printf("PC : $%x\n",g.Cpuemu.RegPc)
 	g.Cpuemu.Execute()
 
-	incppu = g.Cpuemu.Memory[0x2000] & 0x04
+	incppu = g.Cpuemu.Memory[0x2000] & 0x4
 
 	if g.Cpuemu.VramReadFlag {
-		g.Cpuemu.Regi[g.Cpuemu.VramReadReg] = g.Ppuemu.Memory[g.Cpuemu.VramAddr]
-		if incppu == 0x04 {
-			g.Cpuemu.VramAddr+=32
+		if g.Cpuemu.VramAddr >=0 && g.Cpuemu.VramAddr <= 0x3eff {
+			g.Cpuemu.VramnonereadFlag = true
 		} else {
-			g.Cpuemu.VramAddr++
+			g.Cpuemu.VramnonereadFlag = false 
+		}
+		g.Cpuemu.Regi[g.Cpuemu.VramReadReg] = g.Ppuemu.Memory[g.Cpuemu.VramAddr]
+		//fmt.Printf("read PC : $%x, ppumemory : $%x, ppuvalue : $%x\n",g.Cpuemu.RegPc, g.Cpuemu.VramAddr, g.Ppuemu.Memory[g.Cpuemu.VramAddr])
+		if !(g.Cpuemu.VramnonereadFlag && !g.Cpuemu.VramonecFlag) {
+			if incppu == 0x4 {
+				g.Cpuemu.VramAddr+=32
+			} else {
+				g.Cpuemu.VramAddr++
+			}
+		} else {
+			g.Cpuemu.VramonecFlag = true
 		}
 		g.Cpuemu.VramReadFlag = false
 	}
 	
 	if g.Cpuemu.VramWriteFlag {
 		g.Ppuemu.Memory[g.Cpuemu.VramAddr] = g.Cpuemu.VramWriteValue
-		if incppu == 0x04 {
+		//fmt.Printf("write PC : $%x, ppumemory : $%x, value : $%x\n",g.Cpuemu.RegPc, g.Cpuemu.VramAddr, g.Cpuemu.VramWriteValue)
+		if incppu == 0x4 {
 			g.Cpuemu.VramAddr+=32
 		} else {
 			g.Cpuemu.VramAddr++
@@ -383,7 +396,6 @@ func main(){
 	}
 
 	//fmt.Printf("0x2000 : 0b%08b\n",g.Cpuemu.Memory[0x2000])
-	
 	/*
 	for _, e := range g.Cpuemu.Exeopcdlist{
 		fmt.Printf("opcd : 0x%x\n",e)

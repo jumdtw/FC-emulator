@@ -524,6 +524,8 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 	if pos == 0x2006 {
 		fcEmu.VramAddr = fcEmu.VramAddr << 8
 		fcEmu.VramAddr += uint16(fcEmu.Regi[reg])
+		fcEmu.VramnonereadFlag = false 
+		fcEmu.VramonecFlag = false 
 		//fmt.Printf("change vram pos : 0x%x , PC : 0x%x\n",fcEmu.Regi[reg],fcEmu.RegPc)
 	}
 	if pos == 0x2007 {
@@ -660,6 +662,7 @@ func padread(fcEmu *CpuEmu, pos uint16, reg string){
 		fcEmu.VramReadFlag = true
 		fcEmu.VramReadReg = reg
 	}
+
 }
 
 func nflagset(fcEmu *CpuEmu,x uint8){
@@ -767,6 +770,7 @@ func cflagset(fcEmu *CpuEmu,x uint16){
 func (fcEmu *CpuEmu) lda(pos uint16) {
 	padread(fcEmu,pos,"A")
 	fcEmu.Regi["A"] = fcEmu.Memory[pos]
+
 	nflagset(fcEmu, fcEmu.Memory[pos])
 	zflagset(fcEmu, fcEmu.Memory[pos])
 }

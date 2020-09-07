@@ -32,7 +32,10 @@ type CpuEmu struct {
 	VramReadReg string
 	// vram write value
 	VramWriteValue uint8
-
+	// ppuのメモリを読み込む際、$0000-$3effの部分を読み込む際は一回からぶるらしい
+	// noneread $0000-$3eff
+	VramnonereadFlag bool
+	VramonecFlag bool
 
 	// oamへの書き込みフラッグ
 	Oamnum int
@@ -75,6 +78,7 @@ type CpuEmu struct {
 
 	// debug
 	Exeopcdlist []uint8
+	Readiomem []uint16
 	Saveflag bool
 	
 }
@@ -260,6 +264,8 @@ func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.DAMflag = false
 	fcEmu.Saveflag = false
 	fcEmu.VramReadFlag = false
+	fcEmu.VramnonereadFlag = false
+	fcEmu.VramonecFlag = false
 	chrrombuf := initMem(fcEmu)
 	fcEmu.Memory[0x2002] = 0x10
 	return chrrombuf

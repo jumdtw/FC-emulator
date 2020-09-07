@@ -425,11 +425,29 @@ func selectspritecartridge(g *Game) uint64 {
 	return Raddr
 }
 
+func spriteHorVeri(g *Game, highbit uint64, lowbit uint16)([]uint8){
+	spritepallet := make([]uint8,64*4)
+	
+	for i :=0; i<8; i++ {
+		for k :=0; k < 8; k++ {
+			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+			pp +=(i*8+k)*4
+			spritepallet[pp] = rc
+			spritepallet[pp+1] = gc
+			spritepallet[pp+2] = bc
+			spritepallet[pp+3] = 0xff
+		}
+	}
+}
+
 func DrawSprite(g *Game, pp int){
 	var patternNum uint8
 	var palletnum uint8
 	oam := g.Ppuemu.Oam[pp]
 	palletnum = oam.Sflag & 0b00000011
+	vertical = oam.Sflag & 0b10000000
+	horizontal = oam.Sflag & 0b01000000
 	spritex := oam.X
 	spritey := oam.Y
 	// selectspritecartridge
@@ -439,6 +457,7 @@ func DrawSprite(g *Game, pp int){
 		raddr = 0
 	}
 	highbit, lowbit := Romdatareturn(g,raddr+uint64(oam.Spritenum*16))
+	spritepallet := spriteHorVeri(g, highbit, lowbit)
 	arrayhead := (spritex*Pixlsize + spritey*256*Pixlsize)*4
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {
@@ -456,10 +475,10 @@ func DrawSprite(g *Game, pp int){
 }
 
 func Initppuemu(Ppuemu *Ppu,chrrombuf []uint8){
-	for i:=0 ;i<0xfff; i++{
+	for i:=0 ;i<0x1000; i++{
 		Ppuemu.Memory[0x0000+i] = chrrombuf[i]
 	}
-	for i:=0 ;i<0xfff; i++{
+	for i:=0 ;i<0x1000; i++{
 		Ppuemu.Memory[0x1000+i] = chrrombuf[0x1000+i]
 	}
 	for i:=0 ;i<64; i++{
