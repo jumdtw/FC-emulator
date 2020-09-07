@@ -425,29 +425,79 @@ func selectspritecartridge(g *Game) uint64 {
 	return Raddr
 }
 
-func spriteHorVeri(g *Game, highbit uint64, lowbit uint16)([]uint8){
+func spriteHorVeri(g *Game, highbit uint64, lowbit uint64, vertical uint8, horizontal uint8, palletnum uint8)([]uint8){
+	var patternNum uint8
 	spritepallet := make([]uint8,64*4)
-	
-	for i :=0; i<8; i++ {
-		for k :=0; k < 8; k++ {
-			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
-			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
-			pp +=(i*8+k)*4
-			spritepallet[pp] = rc
-			spritepallet[pp+1] = gc
-			spritepallet[pp+2] = bc
-			spritepallet[pp+3] = 0xff
+	if vertical==0x80 && horizontal==0x40 {
+		for i :=7; i>=0; i-- {
+			for k :=7; k >= 0; k-- {
+				patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+				var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+				pp :=(i*8+k)*4
+				spritepallet[pp] = rc
+				spritepallet[pp+1] = gc
+				spritepallet[pp+2] = bc
+				spritepallet[pp+3] = 0xff
+				if patternNum == 0 {
+					spritepallet[pp+3] = 0
+				}
+			}
+		}
+	} else if vertical==0x80 {
+		for i :=7; i>=0; i-- {
+			for k :=0; k < 8; k++ {
+				patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+				var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+				pp :=(i*8+k)*4
+				spritepallet[pp] = rc
+				spritepallet[pp+1] = gc
+				spritepallet[pp+2] = bc
+				spritepallet[pp+3] = 0xff
+				if patternNum == 0 {
+					spritepallet[pp+3] = 0
+				}
+			}
+		}
+	} else if horizontal==0x40 {
+		for i :=0; i<8; i++ {
+			for k :=7; k >= 0; k-- {
+				patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+				var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+				pp :=(i*8+k)*4
+				spritepallet[pp] = rc
+				spritepallet[pp+1] = gc
+				spritepallet[pp+2] = bc
+				spritepallet[pp+3] = 0xff
+				if patternNum == 0 {
+					spritepallet[pp+3] = 0
+				}
+			}
+		}
+	} else {
+		for i :=0; i<8; i++ {
+			for k :=0; k < 8; k++ {
+				patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
+				var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+				pp :=(i*8+k)*4
+				spritepallet[pp] = rc
+				spritepallet[pp+1] = gc
+				spritepallet[pp+2] = bc
+				spritepallet[pp+3] = 0xff
+				if patternNum == 0 {
+					spritepallet[pp+3] = 0
+				}
+			}
 		}
 	}
+	return spritepallet
 }
 
 func DrawSprite(g *Game, pp int){
-	var patternNum uint8
 	var palletnum uint8
 	oam := g.Ppuemu.Oam[pp]
 	palletnum = oam.Sflag & 0b00000011
-	vertical = oam.Sflag & 0b10000000
-	horizontal = oam.Sflag & 0b01000000
+	var vertical uint8 = oam.Sflag & 0b10000000
+	var horizontal uint8 = oam.Sflag & 0b01000000
 	spritex := oam.X
 	spritey := oam.Y
 	// selectspritecartridge
@@ -457,18 +507,19 @@ func DrawSprite(g *Game, pp int){
 		raddr = 0
 	}
 	highbit, lowbit := Romdatareturn(g,raddr+uint64(oam.Spritenum*16))
-	spritepallet := spriteHorVeri(g, highbit, lowbit)
+	spritepallet := spriteHorVeri(g, highbit, lowbit, vertical, horizontal, palletnum)
 	arrayhead := (spritex*Pixlsize + spritey*256*Pixlsize)*4
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {
-			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
-			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f10)
+			qq :=(i*8+k)*4
 			pp := arrayhead + (k+i*256)*4
-			if pp < 256*240*4 && patternNum != 0{
-				g.NoiseImage.Pix[pp] = rc
-				g.NoiseImage.Pix[pp+1] = gc
-				g.NoiseImage.Pix[pp+2] = bc
-				g.NoiseImage.Pix[pp+3] = 0xff
+			if pp < 256*240*4 {
+				if spritepallet[qq+3] != 0 {
+					g.NoiseImage.Pix[pp] = spritepallet[qq]
+					g.NoiseImage.Pix[pp+1] = spritepallet[qq+1]
+					g.NoiseImage.Pix[pp+2] = spritepallet[qq+2]
+					g.NoiseImage.Pix[pp+3] = spritepallet[qq+3]
+				}
 			}
 		}
 	}
