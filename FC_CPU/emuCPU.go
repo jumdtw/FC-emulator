@@ -61,8 +61,10 @@ type CpuEmu struct {
 	// draw info
 	// write x pos when flag is false, write y pos when flag is true 
 	Displaywriteflag bool
-	DisplayX int
-	DisplayY int
+	Displayupdateflag bool
+	DisplayX uint8
+	DisplayY uint8
+	ZerobomY uint8
 
 	// A X Y S P
 	Regi map[string]uint8
@@ -72,9 +74,9 @@ type CpuEmu struct {
 	Memory [memCap]uint8
 
 	// 内部情報
-	UpdateX int
-	UpdateY int
-	Bufvram [256*240*4]uint8
+	Bufvram [4][256*240*4] uint8
+	FBufvram [256*240*4*4] uint8
+	Veiwbuf [256*240*4] uint8
 
 	// debug
 	Exeopcdlist []uint8
@@ -260,7 +262,9 @@ func InitEmu(fcEmu *CpuEmu) ([]uint8) {
 	fcEmu.BotmReadcount = 0
 	fcEmu.DisplayX = 0
 	fcEmu.DisplayY = 0
+	fcEmu.ZerobomY = 0
 	fcEmu.Displaywriteflag = false
+	fcEmu.Displayupdateflag = false
 	fcEmu.DAMflag = false
 	fcEmu.Saveflag = false
 	fcEmu.VramReadFlag = false

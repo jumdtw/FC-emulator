@@ -117,69 +117,7 @@ func cp_mirrorvram(g *Game){
 	}
 }
 
-func drawTile(g *Game,tileheadaddr int,numblock int,numtile int){
 
-
-	var patternNum uint8
-	var palletnum uint8
-	
-	//var palletnum uint8
-	// chrnumにはname tableから、bgまたはspriteの番号を取り出す。
-	nametableaddr := 0x2000
-	chrnum := g.Ppuemu.Memory[nametableaddr + numtile]
-
-	// 番号からほしいタイルのメモリ番号の頭アドレス.ここから128bitとりだす。
-	Raddr := Selectbgcartridge(g)
-	var romaddr uint64 = Raddr + uint64(chrnum)*16
-	
-	highbit, lowbit := Romdatareturn(g,romaddr)
-
-	// patternNumがどのpalletnumであるか。入りえる値は0~3.
-	palletnum = Palletnumreturn(g,numblock,numtile)	
-
-	var pp int
-	for i :=0; i<8; i++ {
-
-		for k :=0; k < 8; k++ {
-
-			// pp : 書き込もうとしているピクセルのrcの場所の配列数宇
-			pp = tileheadaddr+k*4*Pixlsize+i*256*Pixlsize*4*Pixlsize
-			// N tile目のpattern number
-			patternNum, highbit, lowbit = PatternNumreturn(highbit,lowbit)
-			var rc, gc, bc uint8 = Rgbreturn(g,patternNum,palletnum,0x3f00)
-			/*
-			g.NoiseImage.Pix[pp] = rc
-			g.NoiseImage.Pix[pp+1] = gc
-			g.NoiseImage.Pix[pp+2] = bc
-			g.NoiseImage.Pix[pp+3] = 0xff
-			*/
-			g.Cpuemu.Bufvram[pp] = rc
-			g.Cpuemu.Bufvram[pp+1] = gc
-			g.Cpuemu.Bufvram[pp+2] = bc
-			g.Cpuemu.Bufvram[pp+3] = 0xff
-			
-
-			/*
-			// ピクセルの大きさを上がるにはこの処理が必要。下記ソースはピクセルを2x2の大きさで一つのドットにするときに必要になる。
-			g.NoiseImage.Pix[pp+4] = rc
-			g.NoiseImage.Pix[pp+4+1] = gc
-			g.NoiseImage.Pix[pp+4+2] = bc
-			g.NoiseImage.Pix[pp+4+3] = 0xff
-			
-			g.NoiseImage.Pix[pp+256*Pixlsize*4] = rc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+1] = gc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+2] = bc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+3] = 0xff
-
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4] = rc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+1] = gc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+2] = bc
-			g.NoiseImage.Pix[pp+256*Pixlsize*4+4+3] = 0xff
-			*/
-			
-		}
-	}
-}
 
 func (g *Game) padread(){
 	g.pressed = nil
@@ -240,7 +178,6 @@ func (g *Game) padread(){
 	}
 }
 
-
 func (g *Game) Update(screen *ebiten.Image) error {
 
 	// Generate the noise with random RGB values.
@@ -250,23 +187,21 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	var vv int	
 	
 	for i :=0; i<30; i++ {
-
 		for k :=0; k < 32; k++ {
-
 			// vv は n枚目のタイルの一番左上のピクセルの最初の配列番号
 			// k は一増えるごとに8pixl×ピクセル倍率分増える
 			// i は一増えるごとに256×ピクセル倍率に8pixl×ピクセル倍率を掛ける
 			// 最後に4を掛けることにより配列数を出す。
-			vv = (k*8*Pixlsize+i*256*Pixlsize*8*Pixlsize)*4
+			vv = (k*8+i*256*8)*4
 			// patternNum がどのブロックにあるか
 			// tileは32x30の半分なのでブロックは16x15.ナンバリングは0スタート
 			numblock = Numblockreturn(i,k)
 			numtile = k+i*32
-			drawTile(g,vv,numblock,numtile)	
+			drawTile(g,vv,numblock,numtile,0x2000)
+			drawTile(g,vv,numblock,numtile,0x2400)
 		}
 	}
 
-	
 	return nil
 }
 
@@ -304,6 +239,8 @@ func (g *Game) vblanckInterrupt() {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	
+	Screenupdate(g)
+	Veiwerupdate(g)
 	for v :=0 ; v < 260 ; v++ {
 		
 		// vblanck
@@ -325,25 +262,35 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}else{
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
 		}
-		
 
-		for i := 0 ; i < 256 ; i++ {
-			// 0startだから239まで
-			if v <= 239 {
-				vv := i + v*256
-				g.NoiseImage.Pix[vv*4] = g.Cpuemu.Bufvram[vv*4]
-				g.NoiseImage.Pix[vv*4+1] = g.Cpuemu.Bufvram[vv*4+1]
-				g.NoiseImage.Pix[vv*4+2] = g.Cpuemu.Bufvram[vv*4+2]
-				g.NoiseImage.Pix[vv*4+3] = g.Cpuemu.Bufvram[vv*4+3]
-			}
-		}
 		for q := 0 ; q < 114 ; q++ {
 			if q%20 == 0 {
 				//g.padread()
 			}
 			cpuexecute(g)
-
 		}
+
+		if !(g.Cpuemu.DisplayX==0&&g.Cpuemu.DisplayY==0){
+			g.Cpuemu.ZerobomY = uint8(v)
+		}
+
+		if g.Cpuemu.Displayupdateflag {
+			Veiwerupdate(g)
+			g.Cpuemu.Displayupdateflag = false
+		}
+		
+		for i := 0 ; i < 256 ; i++ {
+			// 0startだから239まで
+			if v <= 239 {
+				vv := i + v*256
+				g.NoiseImage.Pix[vv*4] = g.Cpuemu.Veiwbuf[vv*4]
+				g.NoiseImage.Pix[vv*4+1] = g.Cpuemu.Veiwbuf[vv*4+1]
+				g.NoiseImage.Pix[vv*4+2] = g.Cpuemu.Veiwbuf[vv*4+2]
+				g.NoiseImage.Pix[vv*4+3] = g.Cpuemu.Veiwbuf[vv*4+3]
+			}
+		}
+
+		
 	}
 	cp_mirrorvram(g)
 	for i := 0 ; i < 64 ; i++ {

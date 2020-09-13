@@ -3,16 +3,10 @@ package main
 //import "fmt"
 
 const (
-	Pixlsize = 1
-	ScreenWidth  = 256 * Pixlsize
-	ScreenHeight = 240 * Pixlsize
+	ScreenWidth  = 256
+	ScreenHeight = 240
 	memCap = 65535	
-	
 )
-
-type rand struct {
-	x, y, z, w uint32
-}
 
 type Sprite struct {
 	X int 
@@ -87,12 +81,11 @@ func rattributeoffset(numblock int)(int){
 	return offset
 }
 
-func Palletnumreturn(g *Game,numblock int,numtile int)(uint8){
+func Palletnumreturn(g *Game,numblock int,numtile int,Raddr int)(uint8){
 	var counter int
 	var highflag bool = false 
 
 	// まずnumblockを利用してメモリからattribute情報を取り出す。
-	Raddr := 0x23c0
 	offset := rattributeoffset(numblock)
 	var attribute uint8 = g.Ppuemu.Memory[Raddr + offset]
 
@@ -508,7 +501,7 @@ func DrawSprite(g *Game, pp int){
 	}
 	highbit, lowbit := Romdatareturn(g,raddr+uint64(oam.Spritenum*16))
 	spritepallet := spriteHorVeri(g, highbit, lowbit, vertical, horizontal, palletnum)
-	arrayhead := (spritex*Pixlsize + spritey*256*Pixlsize)*4
+	arrayhead := (spritex + spritey*256)*4
 	for i :=0; i<8; i++ {
 		for k :=0; k < 8; k++ {
 			qq :=(i*8+k)*4

@@ -552,12 +552,22 @@ func ppuwrite(fcEmu *CpuEmu, pos uint16,reg string){
 	}
 
 	if pos == 0x2002{
-		//fcEmu.VramAddr = 0
+		fcEmu.VramAddr = 0
 		//fmt.Println("reset scroll")
+		fcEmu.DisplayX = 0
+		fcEmu.DisplayY = 0
 	}
 
 	if pos == 0x2005 {
+		fcEmu.Displayupdateflag = true
 		//fmt.Printf("scroll x or y : 0x%x\n",fcEmu.Regi[reg])
+		if !fcEmu.Displaywriteflag {
+			fcEmu.DisplayX = fcEmu.Regi[reg]
+			fcEmu.Displaywriteflag = true
+		} else {
+			fcEmu.DisplayY = fcEmu.Regi[reg]
+			fcEmu.Displaywriteflag = false 
+		}
 	}
 
 	if pos == 0x4014 {
