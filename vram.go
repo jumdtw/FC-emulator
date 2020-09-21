@@ -66,14 +66,18 @@ func Veiwerupdate(g *Game){
 	}
 
 	for q :=0; q < 240; q++ {
-		if q==int(g.Ppuemu.Oam[0].Y+8) {
-			basetableaddr = int(g.Cpuemu.DisplayX) + int(g.Cpuemu.DisplayY) * 512
+		if q==g.Cpuemu.ZerobomY+8 {
+			basetableaddr += int(g.Cpuemu.DisplayX) + int(g.Cpuemu.DisplayY) * 512
 		}
 		for k :=0; k < 256; k++ {
-			g.Cpuemu.Veiwbuf[(q*256+k)*4] = g.Cpuemu.FBufvram[(basetableaddr+k+q*512)*4]
-			g.Cpuemu.Veiwbuf[(q*256+k)*4+1] = g.Cpuemu.FBufvram[(basetableaddr+k+q*512)*4+1]
-			g.Cpuemu.Veiwbuf[(q*256+k)*4+2] = g.Cpuemu.FBufvram[(basetableaddr+k+q*512)*4+2]
-			g.Cpuemu.Veiwbuf[(q*256+k)*4+3] = g.Cpuemu.FBufvram[(basetableaddr+k+q*512)*4+3]
+			pp := basetableaddr+k+q*512
+			if pp > (q*512 + 511) {
+				pp = pp - 512
+			}
+			g.Cpuemu.Veiwbuf[(q*256+k)*4] = g.Cpuemu.FBufvram[pp*4]
+			g.Cpuemu.Veiwbuf[(q*256+k)*4+1] = g.Cpuemu.FBufvram[pp*4+1]
+			g.Cpuemu.Veiwbuf[(q*256+k)*4+2] = g.Cpuemu.FBufvram[pp*4+2]
+			g.Cpuemu.Veiwbuf[(q*256+k)*4+3] = g.Cpuemu.FBufvram[pp*4+3]
 		}
 	}
 }

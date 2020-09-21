@@ -241,6 +241,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	
 	Screenupdate(g)
 	Veiwerupdate(g)
+
 	for v :=0 ; v < 260 ; v++ {
 		
 		// vblanck
@@ -263,18 +264,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.Cpuemu.Memory[0x2002] = g.Cpuemu.Memory[0x2002] & 0b10111111
 		}
 
-		for q := 0 ; q < 114 ; q++ {
+		for q := 0 ; q < 200 ; q++ {
 			if q%20 == 0 {
 				//g.padread()
 			}
 			cpuexecute(g)
 		}
 
-		if !(g.Cpuemu.DisplayX==0&&g.Cpuemu.DisplayY==0){
-			g.Cpuemu.ZerobomY = uint8(v)
+		if g.Cpuemu.Displayupdateflag{
+			g.Cpuemu.ZerobomY = v
 		}
-
+		
 		if g.Cpuemu.Displayupdateflag {
+			Screenupdate(g)
 			Veiwerupdate(g)
 			g.Cpuemu.Displayupdateflag = false
 		}

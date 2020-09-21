@@ -64,7 +64,7 @@ type CpuEmu struct {
 	Displayupdateflag bool
 	DisplayX uint8
 	DisplayY uint8
-	ZerobomY uint8
+	ZerobomY int
 
 	// A X Y S P
 	Regi map[string]uint8
